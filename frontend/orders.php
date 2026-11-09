@@ -364,6 +364,22 @@ if ($shop_filter > 0) {
         }
     }
 }
+
+// Construction de la chaîne de paramètres filtrés (pour impression complète et export Excel, sans pagination)
+$export_params = [
+    'shop_id' => $shop_filter,
+];
+if (!empty($type_filter)) $export_params['type'] = $type_filter;
+if ($user_filter > 0) $export_params['user_id'] = $user_filter;
+if ($client_filter > 0) $export_params['client_id'] = $client_filter;
+if (!empty($search)) $export_params['search'] = $search;
+if (!empty($date_start)) $export_params['date_start'] = $date_start;
+if (!empty($date_end)) $export_params['date_end'] = $date_end;
+if (!empty($payment_filter)) $export_params['payment_method'] = $payment_filter;
+if (!empty($status_filter)) $export_params['status'] = $status_filter;
+if ($user_role !== 'admin' && !empty($seller_view)) $export_params['view'] = $seller_view;
+
+$filter_qs = http_build_query($export_params);
 ?>
 
 <!-- En-tête exclusif pour l'impression -->
@@ -415,9 +431,12 @@ if ($shop_filter > 0) {
         </h1>
         <div class="d-flex align-items-center gap-2 flex-wrap no-print">
             <span class="text-secondary small fw-semibold">Dépôt : <span class="badge bg-light text-dark border"><?= htmlspecialchars($displayed_shop_name) ?></span></span>
-            <button onclick="window.print()" class="btn btn-outline-secondary btn-sm" style="border-radius: 8px;">
-                <i class="fa-solid fa-print me-1"></i>Imprimer
-            </button>
+            <a href="print-orders.php?<?= $filter_qs ?>" target="_blank" class="btn btn-outline-secondary btn-sm fw-semibold" style="border-radius: 8px;" title="Imprimer tout le journal complet selon les filtres (toutes les transactions)">
+                <i class="fa-solid fa-print me-1"></i>Imprimer Tout
+            </a>
+            <a href="export-orders-excel.php?<?= $filter_qs ?>" class="btn btn-outline-success btn-sm fw-bold shadow-sm" style="border-radius: 8px;" title="Exporter toutes les transactions filtrées au format Excel (.xlsx)">
+                <i class="fa-solid fa-file-excel me-1"></i>Exporter Excel (.xlsx)
+            </a>
             <a href="order-create.php?type=SALE" class="btn btn-grad btn-sm">
                 <i class="fa-solid fa-cart-shopping me-1"></i>Vente
             </a>
@@ -712,7 +731,17 @@ $flow_rate = ($report_purchases_total > 0) ? min(100, round(($report_sales_total
                         <i class="fa-solid fa-store text-primary me-1"></i><?= htmlspecialchars($displayed_shop_name) ?>
                     </span>
                 </div>
-                <span class="badge bg-secondary-subtle text-secondary py-2 px-3 fw-bold rounded-pill"><?= count($orders) ?> transaction(s)</span>
+                <div class="d-flex align-items-center gap-2 flex-wrap no-print">
+                    <a href="export-orders-excel.php?<?= $filter_qs ?>" class="btn btn-outline-success btn-sm fw-bold shadow-sm" title="Télécharger tout le journal filtré en Excel (.xlsx)">
+                        <i class="fa-solid fa-file-excel me-1"></i>Excel (.xlsx)
+                    </a>
+                    <a href="print-orders.php?<?= $filter_qs ?>" target="_blank" class="btn btn-outline-secondary btn-sm fw-semibold shadow-sm" title="Imprimer tout le journal filtré (toutes les transactions)">
+                        <i class="fa-solid fa-print me-1"></i>Imprimer Tout
+                    </a>
+                    <span class="badge bg-secondary-subtle text-secondary py-2 px-3 fw-bold rounded-pill">
+                        <?= $total_records ?> transaction(s) au total
+                    </span>
+                </div>
             </div>
 
             <?php if (empty($orders_grouped)): ?>
