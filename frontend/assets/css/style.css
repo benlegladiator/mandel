@@ -1,0 +1,803 @@
+/* Import Google Fonts - Outfit */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+    /* Brand Theme Colors: White (75%), Green (15%), Yellow (10%) */
+    --brand-green: #059669; /* Vert Émeraude moderne */
+    --brand-green-hover: #047857;
+    --brand-green-light: rgba(5, 150, 105, 0.08);
+    
+    --brand-yellow: #f59e0b; /* Jaune Ambre chaleureux */
+    --brand-yellow-hover: #d97706;
+    --brand-yellow-light: rgba(245, 158, 11, 0.1);
+
+    --primary-gradient: linear-gradient(135deg, #059669 0%, #10b981 100%);
+    --accent-gradient: linear-gradient(135deg, #f59e0b 0%, #eab308 100%);
+    --danger-gradient: linear-gradient(135deg, #ef4444 0%, #f43f5e 100%);
+    --success-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    
+    --bg-light: #fafbfb; /* Blanc cassé très propre */
+    --card-bg: #ffffff;  /* 75% Blanc de base */
+    --text-primary: #1f2937;
+    --text-secondary: #4b5563;
+    --border-color: #e5e7eb;
+}
+
+body {
+    font-family: 'Outfit', sans-serif;
+    background: #f8fafc; /* Slate 50 background */
+    color: #1e293b; /* Slate 800 */
+    min-height: 100vh;
+    font-size: 0.7rem; /* Réduit à 0.7rem selon la demande client */
+    line-height: 1.2;  /* Interligne 1.2 resserré */
+    letter-spacing: -0.01em;
+}
+
+/* Premium Card (75% White theme base) - Ultra Compact & Elegant */
+.glass-card {
+    background: var(--card-bg);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    border-radius: 8px;
+    box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.02);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 0.65rem 0.85rem !important; /* Ultra Compact padding */
+    margin-bottom: 0.6rem;
+}
+
+.glass-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 12px -2px rgba(0, 0, 0, 0.04), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
+    border-color: rgba(5, 150, 105, 0.15);
+}
+
+/* Custom Navbar (75% White theme base) */
+.navbar-custom {
+    background: var(--card-bg) !important;
+    border-bottom: 2px solid var(--border-color);
+    padding: 0.35rem 1rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.01);
+}
+
+.navbar-brand {
+    font-weight: 800;
+    font-size: 1.15rem;
+    background: var(--primary-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.5px;
+}
+
+.nav-link {
+    font-weight: 600;
+    font-size: 0.7rem;
+    line-height: 1.2;
+    color: var(--text-secondary);
+    padding: 0.25rem 0.65rem !important;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.nav-link:hover, .nav-link.active {
+    color: var(--brand-green) !important;
+    background: var(--brand-green-light);
+}
+
+/* Brand Buttons - Compact */
+.btn-grad {
+    background: var(--primary-gradient);
+    color: white;
+    border: none;
+    font-weight: 600;
+    font-size: 0.7rem;
+    line-height: 1.2;
+    border-radius: 6px;
+    padding: 0.32rem 0.8rem;
+    transition: all 0.25s ease;
+    box-shadow: 0 3px 8px -2px rgba(5, 150, 105, 0.25);
+}
+
+.btn-grad:hover {
+    background: var(--brand-green-hover);
+    opacity: 0.95;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 12px -3px rgba(5, 150, 105, 0.35);
+    color: white;
+}
+
+.btn-accent {
+    background: var(--accent-gradient);
+    color: white;
+    border: none;
+    font-weight: 600;
+    font-size: 0.7rem;
+    line-height: 1.2;
+    border-radius: 6px;
+    padding: 0.32rem 0.8rem;
+    transition: all 0.25s ease;
+    box-shadow: 0 3px 8px -2px rgba(245, 158, 11, 0.25);
+}
+
+.btn-accent:hover {
+    background: var(--brand-yellow-hover);
+    opacity: 0.95;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 12px -3px rgba(245, 158, 11, 0.35);
+    color: white;
+}
+
+/* Statistics Badges and Numbers - Compact */
+.stat-value {
+    font-size: 1.35rem;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: var(--text-primary);
+    line-height: 1.1;
+}
+
+.stat-label {
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.6rem;
+    line-height: 1.2;
+    letter-spacing: 0.6px;
+    color: var(--text-secondary);
+    margin-bottom: 0.15rem;
+}
+
+/* Interactive Tables - Compact & Clean */
+.table-custom {
+    border-collapse: separate;
+    border-spacing: 0 3px; /* Compact row spacing */
+    width: 100%;
+}
+
+.table-custom tr {
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.table-custom tbody tr {
+    background: var(--card-bg);
+    border-radius: 6px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.table-custom tbody tr:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px -2px rgba(5, 150, 105, 0.06);
+    border-color: rgba(5, 150, 105, 0.15);
+}
+
+.table-custom th {
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.62rem;
+    line-height: 1.2;
+    letter-spacing: 0.04em;
+    color: #64748b; /* Slate 500 */
+    border: none;
+    padding: 5px 8px;
+}
+
+.table-custom td {
+    padding: 5px 8px; /* Compact padding */
+    font-size: 0.7rem;
+    line-height: 1.2;
+    border-top: 1px solid rgba(226, 232, 240, 0.8);
+    border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+    vertical-align: middle;
+}
+
+.table-custom td:first-child {
+    border-left: 1px solid rgba(226, 232, 240, 0.8);
+    border-top-left-radius: 6px;
+    border-bottom-left-radius: 6px;
+}
+
+.table-custom td:last-child {
+    border-right: 1px solid rgba(226, 232, 240, 0.8);
+    border-top-right-radius: 6px;
+    border-bottom-right-radius: 6px;
+}
+
+/* General Bootstrap Table Compact Override */
+.table th {
+    font-size: 0.65rem;
+    font-weight: 700;
+    line-height: 1.2;
+    padding: 0.35rem 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.table td {
+    font-size: 0.7rem;
+    line-height: 1.2;
+    padding: 0.35rem 0.5rem;
+    vertical-align: middle;
+}
+
+/* Badge styling */
+.badge-custom {
+    padding: 2px 6px;
+    border-radius: 16px;
+    font-weight: 600;
+    font-size: 0.6rem;
+    line-height: 1.2;
+}
+
+/* Form Control & Label Styling - Compact with Guaranteed Contrast */
+.form-label {
+    margin-bottom: 0.15rem;
+    font-size: 0.62rem;
+    line-height: 1.2;
+    font-weight: 700;
+    color: #475569; /* Slate 600 */
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+/* Base Form Inputs - Forcé en noir foncé sur fond blanc pour être toujours 100% visible */
+input, select, textarea,
+.form-control,
+.form-select,
+.form-control-custom {
+    border: 1.5px solid #cbd5e1 !important; /* Slate 300 visible */
+    border-radius: 6px !important;
+    padding: 0.28rem 0.55rem !important;
+    font-size: 0.72rem !important;
+    line-height: 1.2 !important;
+    color: #0f172a !important; /* Texte noir très net et lisible */
+    background-color: #ffffff !important; /* Fond blanc immaculé garanti */
+    -webkit-text-fill-color: #0f172a !important; /* Empêche le blanc sur blanc en mode sombre mobile/navigateur */
+    opacity: 1 !important;
+    transition: all 0.2s ease-in-out;
+}
+
+.form-control-custom:focus,
+.form-control:focus,
+.form-select:focus {
+    outline: none !important;
+    border-color: #10b981 !important; /* Brand green */
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.15) !important;
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+}
+
+/* SPÉCIAL : Champ Quantité (Saisie 100% visible, net et centré sur tous les écrans) */
+.qty-input,
+input.qty-input {
+    min-width: 60px !important;
+    max-width: 85px !important;
+    padding: 0.22rem 0.35rem !important;
+    font-size: 0.78rem !important;
+    line-height: 1.2 !important;
+    font-weight: 700 !important;
+    color: #0f172a !important;
+    background-color: #ffffff !important;
+    -webkit-text-fill-color: #0f172a !important;
+    text-align: center !important;
+    border: 1.5px solid #94a3b8 !important;
+    border-radius: 5px !important;
+}
+
+/* SPÉCIAL : Champ Prix Unitaire */
+.price-input,
+input.price-input {
+    min-width: 80px !important;
+    padding: 0.22rem 0.4rem !important;
+    font-size: 0.74rem !important;
+    line-height: 1.2 !important;
+    font-weight: 600 !important;
+    color: #0f172a !important;
+    background-color: #ffffff !important;
+    -webkit-text-fill-color: #0f172a !important;
+    text-align: right !important;
+    border: 1.5px solid #94a3b8 !important;
+    border-radius: 5px !important;
+}
+
+/* Éviter que les flèches du navigateur ne masquent le chiffre saisi */
+input[type=number]::-webkit-inner-spin-button, 
+input[type=number]::-webkit-outer-spin-button { 
+    opacity: 0.6;
+    margin: 0;
+}
+
+/* Low Stock Warnings */
+.low-stock-row {
+    border-left: 4px solid var(--brand-yellow) !important;
+}
+.critical-stock-row {
+    border-left: 4px solid #ef4444 !important;
+    background: rgba(239, 68, 68, 0.01) !important;
+}
+
+/* Custom background for active badges */
+.bg-primary-subtle {
+    background-color: var(--brand-green-light) !important;
+    color: var(--brand-green) !important;
+}
+.bg-accent-subtle {
+    background-color: var(--brand-yellow-light) !important;
+    color: var(--brand-yellow) !important;
+}
+
+/* Receipt Print Layout */
+@media print {
+    body {
+        background: white !important;
+        color: black !important;
+        font-size: 12px;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .no-print {
+        display: none !important;
+    }
+    
+    .print-container {
+        width: 80mm !important;
+        max-width: 80mm !important;
+        padding: 5px !important;
+        margin: 0 auto !important;
+        border: none !important;
+        box-shadow: none !important;
+        font-family: 'Courier New', Courier, monospace;
+    }
+    
+    .print-header {
+        text-align: center;
+        margin-bottom: 15px;
+    }
+    
+    .print-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .print-table th, .print-table td {
+        border-bottom: 1px dashed #000;
+        padding: 5px 0;
+        font-size: 11px;
+    }
+    
+    .print-total {
+        margin-top: 15px;
+        font-weight: bold;
+        border-top: 1px dashed #000;
+        padding-top: 5px;
+    }
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: #fafbfb;
+}
+::-webkit-scrollbar-thumb {
+    background: var(--brand-green);
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: var(--brand-green-hover);
+}
+
+/* Page animations - Safe with guaranteed visibility fallback */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in-up {
+    opacity: 1 !important; /* Visible par défaut garanti */
+    animation: fadeInUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .fade-in-up {
+        animation: none !important;
+        opacity: 1 !important;
+        transform: none !important;
+    }
+}
+
+/* Animations stagger delays */
+.delay-1 { animation-delay: 0.04s; }
+.delay-2 { animation-delay: 0.08s; }
+.delay-3 { animation-delay: 0.12s; }
+.delay-4 { animation-delay: 0.16s; }
+.delay-5 { animation-delay: 0.20s; }
+.delay-6 { animation-delay: 0.24s; }
+.delay-7 { animation-delay: 0.28s; }
+.delay-8 { animation-delay: 0.32s; }
+
+/* Sidebar Layout CSS */
+#mandel-app-layout {
+    display: flex;
+    overflow-x: hidden;
+    width: 100vw;
+    min-height: 100vh;
+}
+
+#mandel-sidebar {
+    width: 280px;
+    min-width: 280px;
+    max-width: 280px;
+    background: #0b0f19; /* Ultra-dark blue/black background */
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    color: #f8fafc;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    position: sticky;
+    top: 0;
+}
+
+#mandel-sidebar.collapsed {
+    margin-left: -280px;
+}
+
+.sidebar-header {
+    height: 70px;
+    display: flex;
+    align-items: center;
+    padding: 0 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.sidebar-brand-text {
+    font-weight: 800;
+    font-size: 1.4rem;
+    letter-spacing: 1px;
+    background: linear-gradient(135deg, #34d399 0%, #059669 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    display: flex;
+    align-items: center;
+}
+
+.sidebar-user-profile {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    background: rgba(30, 41, 59, 0.15);
+}
+
+.sidebar-menu {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 1.25rem 0.85rem !important;
+}
+
+/* Custom Scrollbar for Sidebar Menu */
+.sidebar-menu::-webkit-scrollbar {
+    width: 4px;
+}
+.sidebar-menu::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+}
+
+.sidebar-section-title {
+    font-size: 0.62rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #475569; /* Muted slate */
+    margin: 0.85rem 0 0.25rem 0.5rem;
+}
+
+.sidebar-link {
+    display: flex;
+    align-items: center;
+    padding: 0.45rem 0.75rem;
+    color: #94a3b8; /* Slate 400 */
+    text-decoration: none !important;
+    border-radius: 6px;
+    font-weight: 500;
+    font-size: 0.72rem;
+    line-height: 1.2;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    margin-bottom: 0.2rem;
+    border-left: 3px solid transparent;
+}
+
+.sidebar-link i {
+    width: 20px;
+    font-size: 0.85rem;
+    color: #64748b;
+    transition: all 0.2s ease;
+}
+
+.sidebar-link:hover {
+    background: rgba(255, 255, 255, 0.03);
+    color: #f1f5f9;
+    padding-left: 1rem;
+}
+
+.sidebar-link:hover i {
+    color: #34d399;
+    transform: scale(1.1);
+}
+
+.sidebar-link.active {
+    background: rgba(16, 185, 129, 0.08);
+    color: #34d399; /* Emerald 400 */
+    font-weight: 600;
+    border-left-color: #10b981;
+}
+
+.sidebar-link.active i {
+    color: #34d399;
+}
+
+.sidebar-link.text-danger {
+    color: #f87171;
+}
+
+.sidebar-link.text-danger i {
+    color: #ef4444;
+}
+
+.sidebar-link.text-danger:hover {
+    background: rgba(239, 68, 68, 0.08);
+    color: #fca5a5 !important;
+}
+
+.sidebar-link.text-danger:hover i {
+    color: #fca5a5;
+}
+
+/* Mobile responsive overlay sidebar */
+@media (max-width: 767.98px) {
+    #mandel-sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        height: 100vh;
+        margin-left: 0;
+        transform: translateX(-100%);
+    }
+    
+    #mandel-sidebar.active {
+        transform: translateX(0);
+    }
+    
+    .sidebar-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(15, 23, 42, 0.4);
+        backdrop-filter: blur(4px);
+        z-index: 999;
+        display: none;
+    }
+    
+    .sidebar-overlay.active {
+        display: block;
+    }
+}
+
+/* Custom Slate and Typography Utility Helpers */
+.text-slate-900 { color: #0f172a !important; }
+.text-slate-800 { color: #1e293b !important; }
+.text-slate-700 { color: #334155 !important; }
+.text-slate-600 { color: #475569 !important; }
+.text-slate-500 { color: #64748b !important; }
+
+.fw-extrabold { font-weight: 800 !important; }
+.fw-semibold { font-weight: 600 !important; }
+
+.border-bottom-2 {
+    border-bottom: 2px solid rgba(226, 232, 240, 0.8) !important;
+}
+
+/* Base Headings Style Override - Ultra Compact */
+h1, h2, h3, h4, h5, h6 {
+    color: #0f172a;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+}
+h1 { font-size: 1.2rem; }
+h2 { font-size: 1.05rem; }
+h3 { font-size: 0.92rem; }
+h4 { font-size: 0.82rem; }
+h5 { font-size: 0.74rem; }
+h6 { font-size: 0.68rem; }
+
+/* ==========================================================================
+   Compact Mode Layout Overrides
+   ========================================================================== */
+.compact-mode body {
+    font-size: 0.65rem !important;
+    line-height: 1.18 !important;
+}
+.compact-mode .glass-card {
+    padding: 0.5rem 0.7rem !important;
+    margin-bottom: 0.5rem !important;
+    border-radius: 6px !important;
+}
+.compact-mode .table-custom {
+    border-spacing: 0 2px !important;
+}
+.compact-mode .table-custom th {
+    padding: 4px 6px !important;
+    font-size: 0.58rem !important;
+    line-height: 1.15 !important;
+}
+.compact-mode .table-custom td {
+    padding: 4px 6px !important;
+    font-size: 0.65rem !important;
+    line-height: 1.15 !important;
+}
+.compact-mode .form-label {
+    margin-bottom: 0.1rem !important;
+    font-size: 0.58rem !important;
+}
+.compact-mode .form-control-custom,
+.compact-mode .form-control,
+.compact-mode .form-select {
+    padding: 0.22rem 0.45rem !important;
+    font-size: 0.65rem !important;
+    line-height: 1.15 !important;
+    border-radius: 5px !important;
+}
+.compact-mode .btn-grad,
+.compact-mode .btn-accent,
+.compact-mode .btn-sm {
+    padding: 0.22rem 0.55rem !important;
+    font-size: 0.65rem !important;
+    border-radius: 5px !important;
+}
+.compact-mode .stat-value {
+    font-size: 1.2rem !important;
+    line-height: 1.05 !important;
+}
+.compact-mode h1 { font-size: 1.1rem !important; }
+.compact-mode h2 { font-size: 0.95rem !important; }
+.compact-mode h3 { font-size: 0.85rem !important; }
+.compact-mode h4 { font-size: 0.78rem !important; }
+.compact-mode h5 { font-size: 0.7rem !important; }
+.compact-mode h6 { font-size: 0.64rem !important; }
+.compact-mode .container-fluid {
+    padding: 0.5rem 0.75rem !important;
+}
+.compact-mode .navbar-custom {
+    padding: 0.3rem 0.75rem !important;
+    margin-bottom: 0.75rem !important;
+}
+.compact-mode .mb-4 {
+    margin-bottom: 0.75rem !important;
+}
+.compact-mode .mb-5 {
+    margin-bottom: 1rem !important;
+}
+.compact-mode .mt-5 {
+    margin-top: 1rem !important;
+}
+.compact-mode .g-4 {
+    --bs-gutter-x: 0.75rem !important;
+    --bs-gutter-y: 0.75rem !important;
+}
+
+/* ==========================================================================
+   Global Report Printing Overrides (Strict Data-Only Clean Print)
+   ========================================================================== */
+@page {
+    size: A4 portrait;
+    margin: 10mm 10mm 12mm 10mm;
+}
+
+@media print {
+    body:not(.invoice-print-body) {
+        background: #ffffff !important;
+        color: #000000 !important;
+        font-family: Arial, Helvetica, sans-serif !important;
+        font-size: 8.5pt !important;
+        line-height: 1.25 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    /* Masquage strict de TOUS les graphiques, diagrammes, filtres, navbars et boutons */
+    body:not(.invoice-print-body) .no-print,
+    body:not(.invoice-print-body) .navbar,
+    body:not(.invoice-print-body) button,
+    body:not(.invoice-print-body) form:not(.print-include),
+    body:not(.invoice-print-body) .btn,
+    body:not(.invoice-print-body) .nav-tabs,
+    body:not(.invoice-print-body) .nav-pills,
+    body:not(.invoice-print-body) .alert,
+    body:not(.invoice-print-body) #compact-toggle,
+    body:not(.invoice-print-body) .modal,
+    body:not(.invoice-print-body) canvas,
+    body:not(.invoice-print-body) svg.apexcharts-canvas,
+    body:not(.invoice-print-body) .apexcharts-canvas,
+    body:not(.invoice-print-body) .apexcharts-wrapper,
+    body:not(.invoice-print-body) .chart-container,
+    body:not(.invoice-print-body) .card-chart,
+    body:not(.invoice-print-body) iframe,
+    body:not(.invoice-print-body) .dropdown {
+        display: none !important;
+    }
+
+    body:not(.invoice-print-body) .container-fluid {
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    body:not(.invoice-print-body) .glass-card {
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        margin-bottom: 1rem !important;
+        background: transparent !important;
+    }
+
+    body:not(.invoice-print-body) .table-responsive {
+        overflow: visible !important;
+    }
+
+    /* Répétition automatique des en-têtes de tableau sur chaque page */
+    body:not(.invoice-print-body) table thead {
+        display: table-header-group !important;
+    }
+    body:not(.invoice-print-body) table tfoot {
+        display: table-footer-group !important;
+    }
+    body:not(.invoice-print-body) table tr {
+        page-break-inside: avoid !important;
+    }
+
+    body:not(.invoice-print-body) table {
+        border-collapse: collapse !important;
+        width: 100% !important;
+        margin-top: 8px !important;
+        font-size: 8pt !important;
+    }
+
+    body:not(.invoice-print-body) th,
+    body:not(.invoice-print-body) td {
+        border: 1px solid #94a3b8 !important;
+        padding: 4px 6px !important;
+        font-size: 8pt !important;
+        color: #000000 !important;
+        background: transparent !important;
+    }
+
+    body:not(.invoice-print-body) th {
+        background-color: #f1f5f9 !important;
+        font-weight: bold !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    body:not(.invoice-print-body) h1,
+    body:not(.invoice-print-body) h2,
+    body:not(.invoice-print-body) h3 {
+        font-size: 11pt !important;
+        margin-bottom: 6px !important;
+        color: #000000 !important;
+    }
+
+    body:not(.invoice-print-body) .stat-value {
+        font-size: 1.2rem !important;
+        color: #000000 !important;
+    }
+}

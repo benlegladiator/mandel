@@ -1,0 +1,19 @@
+# Sauvegardes de base de données
+*.sql
+bd/
+
+# Fichiers temporaires ou exports tabulaires
+*.ods
+*.csv
+scratch/
+*.log
+
+# Archives
+*.zip
+*.tar.gz
+
+# Fichiers système & IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

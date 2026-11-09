@@ -1,0 +1,32 @@
+name: Deploiement Automatique vers InfinityFree Mandel
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Sync FTP to InfinityFree
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🚚 Recuperation du code
+        uses: actions/checkout@v4
+
+      - name: 🚀 Synchronisation FTP vers InfinityFree
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          server-dir: mandel.free.nf/htdocs/
+          exclude: |
+            **/.git*
+            **/.git*/**
+            README.md
+            *.sql
+            *.zip
+            *.ods
+            *.csv
+            bd/**
+            scratch/**
