@@ -1,6 +1,6 @@
 <?php
 // Interrupteur de Licence PWA & Mode Hors-Ligne (Feature Flag)
-define('PWA_OFFLINE_ENABLED', false);
+define('PWA_OFFLINE_ENABLED', true);
 define('PWA_DISABLED_MESSAGE', 'Service PWA & Mode Hors-Ligne non disponible pour l\'instant. Veuillez contacter votre prestataire technique / hébergeur pour l\'activation de ce service.');
 
 // Définir le fuseau horaire du Cameroun (UTC+1)

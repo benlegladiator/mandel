@@ -714,9 +714,86 @@ document.addEventListener('DOMContentLoaded', function() {
     const optionsTemplate = document.getElementById('productSelectOptionsTemplate');
     const orderForm = document.getElementById('orderForm');
 
-    // Anti-double-clic et indicateur de chargement à la soumission
+    // Soumission du formulaire (Online direct ou Hors-Ligne via IndexedDB)
     if (orderForm) {
-        orderForm.addEventListener('submit', function(e) {
+        orderForm.addEventListener('submit', async function(e) {
+            // Si l'appareil est hors-ligne et que le service PWA est actif
+            if (!navigator.onLine && typeof saveOfflineOrder === 'function' && !window.PWA_DISABLED) {
+                e.preventDefault();
+
+                const productSelects = tableBody.querySelectorAll('.product-select');
+                const qtyInputs = tableBody.querySelectorAll('.qty-input');
+                const priceInputs = tableBody.querySelectorAll('.price-input');
+                
+                const items = [];
+                for (let i = 0; i < productSelects.length; i++) {
+                    const pId = parseInt(productSelects[i].value);
+                    const qty = parseInt(qtyInputs[i].value);
+                    const pr = parseFloat(priceInputs[i].value) || 0;
+                    if (pId > 0 && qty > 0) {
+                        const opt = productSelects[i].selectedOptions[0];
+                        items.push({
+                            product_id: pId,
+                            quantity: qty,
+                            price: pr,
+                            product_name: opt ? opt.textContent.trim() : 'Article #' + pId
+                        });
+                    }
+                }
+                
+                if (items.length === 0) {
+                    alert("Veuillez sélectionner au moins un article valide.");
+                    return;
+                }
+
+                const clientSelect = document.getElementById('client_id');
+                const supplierSelect = document.getElementById('supplier_id');
+                const shopSelect = document.getElementById('shop_id');
+                const pmSelect = document.getElementById('payment_method');
+                const discountInput = document.getElementById('discount');
+                const notesInput = document.getElementById('notes');
+
+                const orderData = {
+                    shop_id: parseInt(shopSelect ? shopSelect.value : '<?= $active_shop_id ?>'),
+                    user_id: <?= intval($_SESSION['user_id'] ?? 1) ?>,
+                    order_type: '<?= $type ?>',
+                    client_id: parseInt(clientSelect ? clientSelect.value : 0) || null,
+                    supplier_id: parseInt(supplierSelect ? supplierSelect.value : 0) || null,
+                    payment_method: pmSelect ? pmSelect.value : 'CASH',
+                    discount: parseFloat(discountInput ? discountInput.value : 0) || 0,
+                    notes: (notesInput ? notesInput.value.trim() : ''),
+                    items: items
+                };
+
+                const submitBtn = this.querySelector('button[type="submit"]');
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i>Sauvegarde locale...';
+                }
+
+                const saved = await saveOfflineOrder(orderData);
+                if (saved) {
+                    if (typeof showPwaToast === 'function') {
+                        showPwaToast('🎉 Vente enregistrée avec succès en local (Mode Hors-Ligne) ! Elle sera automatiquement synchronisée dès le retour d\'Internet.', 'success');
+                    } else {
+                        alert("Vente enregistrée en local (Mode Hors-Ligne). Elle sera synchronisée au retour du réseau.");
+                    }
+                    if (typeof updateOfflineBanner === 'function') {
+                        updateOfflineBanner();
+                    }
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1800);
+                } else {
+                    alert("Erreur lors de l'enregistrement hors-ligne. Veuillez réessayer.");
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = '<i class="fa-solid fa-check-circle me-2"></i><?= $type === 'SALE' ? 'Valider la Vente' : 'Valider le Ravitaillement' ?>';
+                    }
+                }
+                return;
+            }
+
             const submitBtn = this.querySelector('button[type="submit"]');
             if (submitBtn && !submitBtn.disabled) {
                 submitBtn.disabled = true;

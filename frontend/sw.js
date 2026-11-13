@@ -67,13 +67,13 @@ self.addEventListener('fetch', (event) => {
       .catch(() => {
         // Si pas de connexion réseau (Hors-Ligne), servir depuis le cache local
         console.log('[Service Worker] Mode Hors-Ligne : Servir la ressource depuis le cache pour :', event.request.url);
-        return caches.match(event.request).then((cachedResponse) => {
+        return caches.match(event.request, { ignoreSearch: true }).then((cachedResponse) => {
           if (cachedResponse) {
             return cachedResponse;
           }
-          // Si la page spécifique n'est pas en cache, renvoyer vers index.php ou la page la plus proche
-          if (event.request.headers.get('accept').includes('text/html')) {
-            return caches.match('./index.php');
+          // Si la page spécifique n'est pas en cache, renvoyer vers index.php ou order-create.php
+          if (event.request.headers.get('accept') && event.request.headers.get('accept').includes('text/html')) {
+            return caches.match('./order-create.php', { ignoreSearch: true }).then(r => r || caches.match('./index.php'));
           }
         });
       })
