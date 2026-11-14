@@ -714,6 +714,25 @@ document.addEventListener('DOMContentLoaded', function() {
     const optionsTemplate = document.getElementById('productSelectOptionsTemplate');
     const orderForm = document.getElementById('orderForm');
 
+    function updateOrderCreateOfflineUI() {
+        const isOffline = (!navigator.onLine || (typeof isForcedOffline === 'function' && isForcedOffline()));
+        const submitBtn = orderForm ? orderForm.querySelector('button[type="submit"]') : null;
+        if (submitBtn) {
+            if (isOffline) {
+                submitBtn.classList.remove('btn-success');
+                submitBtn.classList.add('btn-warning', 'text-dark');
+                submitBtn.innerHTML = '<i class="fa-solid fa-hard-drive me-2"></i>Valider (Enregistrement Hors-Ligne)';
+            } else {
+                submitBtn.classList.remove('btn-warning', 'text-dark');
+                submitBtn.classList.add('btn-success');
+                submitBtn.innerHTML = '<i class="fa-solid fa-check-circle me-2"></i><?= $type === 'SALE' ? 'Valider la Vente' : 'Valider le Ravitaillement' ?>';
+            }
+        }
+    }
+    updateOrderCreateOfflineUI();
+    window.addEventListener('online', updateOrderCreateOfflineUI);
+    window.addEventListener('offline', updateOrderCreateOfflineUI);
+
     // Soumission du formulaire (Online direct ou Hors-Ligne via IndexedDB)
     if (orderForm) {
         orderForm.addEventListener('submit', async function(e) {

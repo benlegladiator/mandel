@@ -801,3 +801,12 @@ h6 { font-size: 0.68rem; }
         color: #000000 !important;
     }
 }
+
+/* Animation pulsation statut hors-ligne */
+@keyframes mandelPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.85; transform: scale(0.98); }
+}
+.animate-pulse {
+    animation: mandelPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}

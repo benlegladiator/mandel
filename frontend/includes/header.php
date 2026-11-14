@@ -105,13 +105,13 @@ if ($_SESSION['active_shop_id'] == 0) {
         <meta name="apple-mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
         <meta name="apple-mobile-web-app-title" content="Mandel">
-        <script src="assets/js/pwa-offline-sync.js" defer></script>
+        <script src="assets/js/pwa-offline-sync.js?v=<?= file_exists(__DIR__ . '/../assets/js/pwa-offline-sync.js') ? filemtime(__DIR__ . '/../assets/js/pwa-offline-sync.js') : time() ?>" defer></script>
     <?php else: ?>
         <script>
             window.PWA_DISABLED = true;
             window.PWA_DISABLED_MSG = <?= json_encode(defined('PWA_DISABLED_MESSAGE') ? PWA_DISABLED_MESSAGE : 'Service PWA non disponible pour l\'instant. Veuillez contacter l\'opérateur d\'hébergement.') ?>;
         </script>
-        <script src="assets/js/pwa-offline-sync.js" defer></script>
+        <script src="assets/js/pwa-offline-sync.js?v=<?= file_exists(__DIR__ . '/../assets/js/pwa-offline-sync.js') ? filemtime(__DIR__ . '/../assets/js/pwa-offline-sync.js') : time() ?>" defer></script>
     <?php endif; ?>
     <!-- Custom Style Sheet with Cache Buster -->
     <link href="assets/css/style.css?v=<?= file_exists(__DIR__ . '/../assets/css/style.css') ? filemtime(__DIR__ . '/../assets/css/style.css') : time() ?>" rel="stylesheet">
@@ -233,16 +233,11 @@ $total_notifications_count = $total_debt_alerts + $unread_transfers_count;
                     </div>
                 <?php endif; ?>
 
-                <!-- Indicateur Réseau & Centre Hors-Ligne -->
-                <button type="button" class="btn btn-sm btn-light border fw-bold me-2 text-nowrap d-flex align-items-center gap-1.5 shadow-sm" id="networkStatusBtn" data-bs-toggle="modal" data-bs-target="#offlineSyncModal" style="border-radius: 8px; padding: 0.35rem 0.65rem;" title="Centre Hors-Ligne & Synchronisation">
-                    <span id="networkStatusDot" style="width: 9px; height: 9px; border-radius: 50%; background-color: #22c55e; display: inline-block;"></span>
-                    <span id="networkStatusText" style="font-size: 0.8rem;">En ligne</span>
+                <!-- Indicateur Réseau & Centre Hors-Ligne Mandel -->
+                <button type="button" class="btn btn-sm btn-light border fw-bold me-2 text-nowrap d-flex align-items-center gap-2 shadow-sm" id="networkStatusBtn" data-bs-toggle="modal" data-bs-target="#offlineSyncModal" style="border-radius: 8px; padding: 0.35rem 0.75rem;" title="Centre Hors-Ligne & Synchronisation">
+                    <span id="networkStatusDot" style="width: 10px; height: 10px; border-radius: 50%; background-color: #22c55e; display: inline-block;"></span>
+                    <span id="networkStatusText" style="font-size: 0.85rem;">En ligne</span>
                     <span class="badge bg-warning text-dark d-none ms-1" id="networkPendingBadge" style="font-size: 0.7rem; border-radius: 10px;">0</span>
-                </button>
-
-                <!-- Bouton Installer l'application PWA -->
-                <button type="button" class="btn btn-sm btn-outline-primary fw-bold me-3 text-nowrap" id="pwaInstallBtn" onclick="handlePwaInstallClick()" style="border-radius: 8px;" title="Installer l'application sur cet appareil">
-                    <i class="fa-solid fa-download me-1 text-primary"></i>Installer l'App
                 </button>
 
                 <!-- Infos Profil & Bouton Déconnexion -->
