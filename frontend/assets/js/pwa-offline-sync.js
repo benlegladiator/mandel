@@ -355,6 +355,19 @@ async function clearAllOfflineOrders() {
 }
 
 // -------------------------------------------------------------
+// DÉTECTION DE L'URL D'API DE SYNCHRONISATION
+// -------------------------------------------------------------
+function getSyncApiUrl() {
+  const loc = window.location;
+  const path = loc.pathname;
+  if (path.includes('/frontend/')) {
+    const base = path.substring(0, path.indexOf('/frontend/'));
+    return `${loc.origin}${base}/backend/api/sync_offline.php`;
+  }
+  return '../backend/api/sync_offline.php';
+}
+
+// -------------------------------------------------------------
 // SYNCHRONISATION DES DONNÉES AVEC LE BACKEND
 // -------------------------------------------------------------
 let isSyncing = false;
@@ -377,28 +390,47 @@ async function syncOfflineData() {
   }
 
   isSyncing = true;
+  const syncBtn = document.getElementById('manualSyncBtn');
+  const syncIcon = document.getElementById('manualSyncIcon');
+  if (syncBtn) syncBtn.disabled = true;
+  if (syncIcon) syncIcon.classList.add('fa-spin');
+
   showPwaToast(`🔄 Synchronisation de ${orders.length} commande(s) hors-ligne en cours...`, 'info');
 
   try {
-    const res = await fetch('../backend/api/sync_offline.php', {
+    const apiUrl = getSyncApiUrl();
+    const res = await fetch(apiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ orders: orders })
     });
 
+    if (!res.ok) {
+      throw new Error(`Erreur HTTP ${res.status}`);
+    }
+
     const data = await res.json();
     if (data && data.success) {
-      await clearAllOfflineOrders();
-      showPwaToast(`✅ Synchronisation réussie ! ${data.synced_count} commande(s) enregistrée(s) au serveur central.`, 'success');
-      updateNetworkIndicators();
-      renderOfflineModalData();
+      if (Array.isArray(data.synced_ids) && data.synced_ids.length > 0) {
+        for (const sid of data.synced_ids) {
+          await deleteOfflineOrder(sid);
+        }
+      } else {
+        await clearAllOfflineOrders();
+      }
+      showPwaToast(`✅ Synchronisation réussie ! ${data.synced_count || orders.length} vente(s) enregistrée(s) au serveur central.`, 'success');
+      await updateNetworkIndicators();
+      await renderOfflineModalData();
     } else {
       showPwaToast(`⚠️ Problème de synchronisation: ${data.message || 'Erreur serveur'}`, 'warning');
     }
   } catch (err) {
     console.warn('[PWA Sync] Échec communication serveur:', err);
+    showPwaToast('⚠️ Connexion au serveur instable. Vos données restent conservées en sécurité locale et seront synchronisées dès le rétablissement.', 'warning');
   } finally {
     isSyncing = false;
+    if (syncBtn) syncBtn.disabled = false;
+    if (syncIcon) syncIcon.classList.remove('fa-spin');
   }
 }
 
@@ -413,6 +445,11 @@ async function triggerManualSync() {
       handleForceOfflineToggle(false);
       return;
     }
+    return;
+  }
+  const orders = await getOfflineOrders();
+  if (orders.length === 0) {
+    showPwaToast('✅ Aucune commande hors-ligne en attente. Tout est déjà à jour sur le serveur !', 'info');
     return;
   }
   await syncOfflineData();
@@ -462,7 +499,7 @@ async function renderOfflineModalData() {
     const pm = (ord.payment_method || 'CASH').toUpperCase();
     if (pm === 'CASH') {
       totalCash += totalAmt;
-    } else if (pm === 'MOBILE_MONEY') {
+    } else if (pm === 'MOBILE_MONEY' || pm === 'MOMO' || pm === 'OM') {
       totalMomo += totalAmt;
     } else if (pm === 'CREDIT') {
       totalCredit += totalAmt;
@@ -471,8 +508,8 @@ async function renderOfflineModalData() {
 
   const cashEl = document.getElementById('offlineCashTotal');
   const momoEl = document.getElementById('offlineMomoTotal');
-  const countEl = document.getElementById('offlineCountTotal');
-  const overallEl = document.getElementById('offlineOverallTotal');
+  const countEl = document.getElementById('offlineCountTotal') || document.getElementById('offlineCount');
+  const overallEl = document.getElementById('offlineOverallTotal') || document.getElementById('offlineSalesTotal');
 
   if (cashEl) cashEl.textContent = formatMoney(totalCash) + ' FCFA';
   if (momoEl) momoEl.textContent = formatMoney(totalMomo) + ' FCFA';
@@ -480,7 +517,7 @@ async function renderOfflineModalData() {
   if (overallEl) overallEl.textContent = formatMoney(totalOverall) + ' FCFA';
 
   const tableBody = document.getElementById('offlineOrdersTableBody');
-  const emptyState = document.getElementById('offlineOrdersEmptyState');
+  const emptyState = document.getElementById('offlineOrdersEmptyState') || document.getElementById('offlineEmptyState');
   const tableContainer = document.getElementById('offlineOrdersTableContainer');
 
   if (tableBody) {
@@ -498,7 +535,7 @@ async function renderOfflineModalData() {
         const itemsDesc = (ord.items || []).map(it => `${it.product_name || 'Article'} (x${it.quantity} @ ${formatMoney(it.price)} F)`).join(', ');
         const subtotal = (ord.items || []).reduce((acc, it) => acc + (parseFloat(it.price) * parseInt(it.quantity)), 0);
         const totalAmt = Math.max(0, subtotal - (parseFloat(ord.discount) || 0));
-        const pmLabels = { 'CASH': 'Espèces', 'MOBILE_MONEY': 'MOMO', 'CREDIT': 'Crédit', 'CARD': 'Carte', 'VIREMENT': 'Virement' };
+        const pmLabels = { 'CASH': 'Espèces', 'MOBILE_MONEY': 'MOMO', 'MOMO': 'MOMO', 'OM': 'Orange Money', 'CREDIT': 'Crédit', 'CARD': 'Carte', 'VIREMENT': 'Virement' };
         const pmStr = pmLabels[ord.payment_method] || ord.payment_method;
 
         tr.innerHTML = `
@@ -669,7 +706,20 @@ window.addEventListener('online', () => {
   renderOfflineModalData();
   if (!window.PWA_DISABLED && !isForcedOffline()) {
     showPwaToast('🌐 Connexion Internet rétablie ! Lancement de la synchronisation automatique...', 'success');
-    syncOfflineData();
+    setTimeout(() => {
+      syncOfflineData();
+    }, 1000);
+  }
+});
+
+// Écouteur focus pour synchroniser au retour sur l'onglet si reconnecté
+window.addEventListener('focus', () => {
+  if (navigator.onLine && !isForcedOffline() && !window.PWA_DISABLED) {
+    getPendingOfflineCount().then(count => {
+      if (count > 0 && !isSyncing) {
+        syncOfflineData();
+      }
+    });
   }
 });
 
