@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mandel-pwa-v5';
+const CACHE_NAME = 'mandel-pwa-v6';
 
 const ASSETS_TO_CACHE = [
   './index.php',
@@ -16,8 +16,13 @@ const ASSETS_TO_CACHE = [
   './assets/js/export-excel.js',
   './assets/images/logo.png',
   './assets/images/favicon.png',
+  './assets/images/favicon-32x32.png',
+  './assets/images/favicon-16x16.png',
+  './assets/images/apple-touch-icon.png',
   './assets/images/icon-192.png',
   './assets/images/icon-512.png',
+  './assets/images/icon-maskable-192.png',
+  './assets/images/icon-maskable-512.png',
   './manifest.json',
   './manifest.php',
   'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css',

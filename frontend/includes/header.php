@@ -86,9 +86,11 @@ if ($_SESSION['active_shop_id'] == 0) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mandel - Gestion de Stock</title>
-    <link rel="icon" type="image/png" href="assets/images/favicon.png">
-    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
-    <link rel="apple-touch-icon" href="assets/images/icon-192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/images/favicon-32x32.png?v=6">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/images/favicon-16x16.png?v=6">
+    <link rel="icon" type="image/png" href="assets/images/favicon.png?v=6">
+    <link rel="shortcut icon" href="favicon.ico?v=6" type="image/x-icon">
+    <link rel="apple-touch-icon" href="assets/images/apple-touch-icon.png?v=6">
     <script>
         if (localStorage.getItem('mandel-compact-mode') !== 'disabled') {
             document.documentElement.classList.add('compact-mode');
@@ -103,8 +105,8 @@ if ($_SESSION['active_shop_id'] == 0) {
         <?php
         $is_mandel_prod = (isset($_SERVER['HTTP_HOST']) && strpos($_SERVER['HTTP_HOST'], 'mandel.free.nf') !== false);
         $manifest_url = $is_mandel_prod 
-            ? "https://cdn.jsdelivr.net/gh/benlegladiator/mandel@main/frontend/manifest.json" 
-            : "manifest.php";
+            ? "https://cdn.jsdelivr.net/gh/benlegladiator/mandel@main/frontend/manifest.json?v=6" 
+            : "manifest.php?v=6";
         ?>
         <link rel="manifest" href="<?= $manifest_url ?>" crossorigin="anonymous">
         <meta name="theme-color" content="#059669">
