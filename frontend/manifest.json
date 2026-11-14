@@ -4,8 +4,8 @@
   "description": "Application de gestion de stock, facturation et caisse multi-boutiques Mandel Papeterie.",
   "start_url": "./index.php",
   "display": "standalone",
-  "background_color": "#f8fafc",
-  "theme_color": "#4f46e5",
+  "background_color": "#ffffff",
+  "theme_color": "#059669",
   "orientation": "any",
   "icons": [
     {

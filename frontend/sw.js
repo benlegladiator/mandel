@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mandel-pwa-v1';
+const CACHE_NAME = 'mandel-pwa-v2';
 const ASSETS_TO_CACHE = [
   './',
   './index.php',
@@ -13,6 +13,10 @@ const ASSETS_TO_CACHE = [
   './depot.php',
   './assets/css/style.css',
   './assets/js/pwa-offline-sync.js',
+  './assets/images/logo.png',
+  './assets/images/favicon.png',
+  './assets/images/icon-192.png',
+  './assets/images/icon-512.png',
   './manifest.json',
   'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css',
   'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js',

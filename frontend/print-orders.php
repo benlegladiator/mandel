@@ -193,6 +193,9 @@ if ($date_start && $date_end) {
 <head>
     <meta charset="UTF-8">
     <title>Journal des Flux - <?= htmlspecialchars($shop_name) ?></title>
+    <link rel="icon" type="image/png" href="assets/images/favicon.png">
+    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+    <link rel="apple-touch-icon" href="assets/images/icon-192.png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -294,24 +297,27 @@ if ($date_start && $date_end) {
 
 <div class="container-fluid px-3 py-2">
     <!-- En-tête officiel Mandel -->
-    <div class="d-flex justify-content-between align-items-start border-bottom pb-2 mb-2">
-        <div>
-            <h4 class="fw-extrabold mb-0 text-slate-900" style="letter-spacing: 0.5px;">ETS MANDEL PAPETERIE</h4>
-            <div class="fw-bold text-uppercase text-primary" style="font-size: 10.5pt;">
-                RAPPORT D'ACTIVITÉ & JOURNAL DES FLUX DE CAISSE
-            </div>
-            <div class="text-secondary small mt-1">
-                <strong>Dépôt / Magasin :</strong> <span class="text-dark fw-bold"><?= htmlspecialchars($shop_name) ?></span>
-                &nbsp;|&nbsp;
-                <strong>Période :</strong> <span class="text-dark fw-bold"><?= htmlspecialchars($periode_label) ?></span>
-                &nbsp;|&nbsp;
-                <strong>Vendeur :</strong> <span class="text-dark fw-bold"><?= htmlspecialchars($seller_name) ?></span>
-                <?php if ($type_filter): ?>
-                    &nbsp;|&nbsp;<strong>Flux :</strong> <span class="text-dark fw-bold"><?= $type_filter === 'SALE' ? 'Ventes' : 'Achats' ?></span>
-                <?php endif; ?>
-                <?php if ($payment_filter): ?>
-                    &nbsp;|&nbsp;<strong>Règlement :</strong> <span class="text-dark fw-bold"><?= htmlspecialchars($payment_filter) ?></span>
-                <?php endif; ?>
+    <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-2">
+        <div class="d-flex align-items-center gap-3">
+            <img src="assets/images/logo.png" alt="Mandel" style="height: 48px; width: auto; object-fit: contain;">
+            <div>
+                <h4 class="fw-extrabold mb-0 text-slate-900" style="letter-spacing: 0.5px;">ETS MANDEL PAPETERIE</h4>
+                <div class="fw-bold text-uppercase text-primary" style="font-size: 10.5pt;">
+                    RAPPORT D'ACTIVITÉ & JOURNAL DES FLUX DE CAISSE
+                </div>
+                <div class="text-secondary small mt-1">
+                    <strong>Dépôt / Magasin :</strong> <span class="text-dark fw-bold"><?= htmlspecialchars($shop_name) ?></span>
+                    &nbsp;|&nbsp;
+                    <strong>Période :</strong> <span class="text-dark fw-bold"><?= htmlspecialchars($periode_label) ?></span>
+                    &nbsp;|&nbsp;
+                    <strong>Vendeur :</strong> <span class="text-dark fw-bold"><?= htmlspecialchars($seller_name) ?></span>
+                    <?php if ($type_filter): ?>
+                        &nbsp;|&nbsp;<strong>Flux :</strong> <span class="text-dark fw-bold"><?= $type_filter === 'SALE' ? 'Ventes' : 'Achats' ?></span>
+                    <?php endif; ?>
+                    <?php if ($payment_filter): ?>
+                        &nbsp;|&nbsp;<strong>Règlement :</strong> <span class="text-dark fw-bold"><?= htmlspecialchars($payment_filter) ?></span>
+                    <?php endif; ?>
+                </div>
             </div>
         </div>
         <div class="text-end small">

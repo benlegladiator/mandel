@@ -108,6 +108,9 @@ $user_role = $_SESSION['user_role'] ?? 'seller';
 <head>
     <meta charset="UTF-8">
     <title>Catalogue Produits - <?= htmlspecialchars($shop_name) ?></title>
+    <link rel="icon" type="image/png" href="assets/images/favicon.png">
+    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+    <link rel="apple-touch-icon" href="assets/images/icon-192.png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -140,10 +143,13 @@ $user_role = $_SESSION['user_role'] ?? 'seller';
 
 <div class="container-fluid px-4 py-3">
     <!-- En-tête officiel -->
-    <div class="d-flex justify-content-between align-items-start border-bottom pb-3 mb-3">
-        <div>
-            <h3 class="fw-bold mb-1 text-slate-900" style="font-size: 15pt;">MANDEL PAPETERIE ERP</h3>
-            <h5 class="fw-semibold text-secondary mb-0" style="font-size: 11pt;">CATALOGUE GÉNÉRAL DES ARTICLES</h5>
+    <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
+        <div class="d-flex align-items-center gap-3">
+            <img src="assets/images/logo.png" alt="Mandel" style="height: 48px; width: auto; object-fit: contain;">
+            <div>
+                <h3 class="fw-bold mb-1 text-slate-900" style="font-size: 15pt;">MANDEL PAPETERIE ERP</h3>
+                <h5 class="fw-semibold text-secondary mb-0" style="font-size: 11pt;">CATALOGUE GÉNÉRAL DES ARTICLES</h5>
+            </div>
         </div>
         <div class="text-end small">
             <div><strong>Dépôt :</strong> <?= htmlspecialchars($shop_name) ?></div>

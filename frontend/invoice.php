@@ -215,6 +215,9 @@ $whatsapp_text .= "Merci pour votre confiance !";
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Facture <?= htmlspecialchars($order['reference'] ?? 'FAC-'.sprintf("%05d", $order['id'])) ?></title>
+    <link rel="icon" type="image/png" href="assets/images/favicon.png">
+    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+    <link rel="apple-touch-icon" href="assets/images/icon-192.png">
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- FontAwesome for Icons -->
@@ -427,6 +430,9 @@ $whatsapp_text .= "Merci pour votre confiance !";
         
         <!-- Header du ticket -->
         <div class="print-header text-center mb-3">
+            <div class="mb-2">
+                <img src="assets/images/logo.png" alt="Mandel" style="height: 44px; max-width: 100%; object-fit: contain;">
+            </div>
             <h4 class="fw-bold mb-1" style="letter-spacing: -0.5px;">Ets MANDEL</h4>
             <div class="small text-uppercase fw-semibold text-secondary mb-1"><?= htmlspecialchars($order['shop_name']) ?></div>
             <div class="small text-secondary" style="font-size: 11px; line-height: 1.2;">

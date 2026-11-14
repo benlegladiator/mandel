@@ -86,6 +86,9 @@ if ($_SESSION['active_shop_id'] == 0) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mandel - Gestion de Stock</title>
+    <link rel="icon" type="image/png" href="assets/images/favicon.png">
+    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+    <link rel="apple-touch-icon" href="assets/images/icon-192.png">
     <script>
         if (localStorage.getItem('mandel-compact-mode') !== 'disabled') {
             document.documentElement.classList.add('compact-mode');
@@ -98,7 +101,7 @@ if ($_SESSION['active_shop_id'] == 0) {
     <!-- PWA Manifest & Condition de Licence PWA_OFFLINE_ENABLED -->
     <?php if (defined('PWA_OFFLINE_ENABLED') && PWA_OFFLINE_ENABLED === true): ?>
         <link rel="manifest" href="manifest.json">
-        <meta name="theme-color" content="#4f46e5">
+        <meta name="theme-color" content="#059669">
         <meta name="apple-mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
         <meta name="apple-mobile-web-app-title" content="Mandel">
@@ -149,8 +152,9 @@ $total_notifications_count = $total_debt_alerts + $unread_transfers_count;
     <!-- Navbar simplifiée et épurée -->
     <nav class="navbar navbar-expand-lg navbar-custom sticky-top no-print mb-4">
         <div class="container-fluid">
-            <a class="navbar-brand" href="index.php">
-                <i class="fa-solid fa-folder-open me-2"></i>Ets MANDEL
+            <a class="navbar-brand d-flex align-items-center gap-2 py-1" href="index.php">
+                <img src="assets/images/logo.png" alt="Mandel" style="height: 34px; width: auto; object-fit: contain;">
+                <span>Ets MANDEL</span>
             </a>
             
             <?php if (isset($_SESSION['user_id'])): ?>

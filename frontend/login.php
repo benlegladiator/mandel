@@ -52,6 +52,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mandel - Connexion</title>
+    <link rel="icon" type="image/png" href="assets/images/favicon.png">
+    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+    <link rel="apple-touch-icon" href="assets/images/icon-192.png">
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- FontAwesome -->
@@ -120,7 +123,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body>
 
 <div class="login-card">
-    <div class="brand-logo"><i class="fa-solid fa-folder-open me-2"></i>MANDEL</div>
+    <div class="text-center mb-3">
+        <img src="assets/images/logo.png" alt="Mandel" style="height: 64px; max-width: 100%; object-fit: contain;">
+    </div>
     <p class="text-center text-secondary small mb-4">Gestion de Stock & Facturation de Papeterie</p>
 
     <?php if ($error): ?>
