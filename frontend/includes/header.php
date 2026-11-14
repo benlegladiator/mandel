@@ -100,7 +100,7 @@ if ($_SESSION['active_shop_id'] == 0) {
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <!-- PWA Manifest & Condition de Licence PWA_OFFLINE_ENABLED -->
     <?php if (defined('PWA_OFFLINE_ENABLED') && PWA_OFFLINE_ENABLED === true): ?>
-        <link rel="manifest" href="manifest.json">
+        <link rel="manifest" href="manifest.php" crossorigin="use-credentials">
         <meta name="theme-color" content="#059669">
         <meta name="apple-mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mandel-pwa-v3';
+const CACHE_NAME = 'mandel-pwa-v4';
 
 const ASSETS_TO_CACHE = [
   './index.php',
@@ -19,6 +19,7 @@ const ASSETS_TO_CACHE = [
   './assets/images/icon-192.png',
   './assets/images/icon-512.png',
   './manifest.json',
+  './manifest.php',
   'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css',
   'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css'

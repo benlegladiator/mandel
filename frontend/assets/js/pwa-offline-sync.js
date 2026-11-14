@@ -86,7 +86,7 @@ function showAutoInstallPrompt() {
         Installez Mandel sur votre écran d'accueil pour un accès en 1 clic et continuer à encaisser et vendre <strong>même en cas de coupure Internet</strong>.
       </p>
       <div id="pwaInstallActionContainer" style="display: flex; gap: 8px;">
-        <button type="button" class="btn btn-success fw-bold flex-grow-1" onclick="executePwaInstall()" style="background: #059669; border: none; border-radius: 10px; padding: 8px 14px; font-size: 0.88rem;">
+        <button type="button" class="btn btn-success fw-bold flex-grow-1" id="btnExecutePwaInstall" onclick="executePwaInstall()" style="background: #059669; border: none; border-radius: 10px; padding: 8px 14px; font-size: 0.88rem;">
           <i class="fa-solid fa-download me-1.5"></i> Installer Maintenant
         </button>
         <button type="button" class="btn btn-outline-secondary" onclick="dismissAutoInstallPrompt()" style="border-radius: 10px; padding: 8px 14px; font-size: 0.85rem;">
@@ -103,33 +103,65 @@ function showAutoInstallPrompt() {
   }
 }
 
+// Écouteur de confirmation d'installation réussie
+window.addEventListener('appinstalled', (evt) => {
+  console.log('[PWA] Application installée avec succès !');
+  showPwaToast('🎉 Application Mandel installée avec succès sur votre appareil ! Retrouvez-la sur votre écran d\'accueil.', 'success');
+  dismissAutoInstallPrompt();
+});
+
 // Exécuter l'installation lors du clic sur le bouton automatique
-function executePwaInstall() {
+async function executePwaInstall() {
+  const btn = document.getElementById('btnExecutePwaInstall');
+  const originalHtml = btn ? btn.innerHTML : '';
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1.5"></i> Préparation...';
+  }
+
+  // Si l'événement deferredPwaPrompt n'est pas encore arrivé, attendre jusqu'à 1,5s
+  if (!deferredPwaPrompt) {
+    for (let i = 0; i < 5; i++) {
+      await new Promise(r => setTimeout(r, 300));
+      if (deferredPwaPrompt) break;
+    }
+  }
+
   if (deferredPwaPrompt) {
     deferredPwaPrompt.prompt();
-    deferredPwaPrompt.userChoice.then((choiceResult) => {
-      if (choiceResult.outcome === 'accepted') {
-        console.log('[PWA] L\'utilisateur a accepté l\'installation.');
-        showPwaToast('🎉 Application Mandel installée avec succès ! Retrouvez-la sur votre écran.', 'success');
-        dismissAutoInstallPrompt();
-      }
-      deferredPwaPrompt = null;
-    });
-  } else {
-    // Si deferredPrompt non disponible (ex: iOS Safari ou navigateur PC sans hook direct)
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-    const infoBox = document.getElementById('pwaManualInstructions');
-    const actions = document.getElementById('pwaInstallActionContainer');
-    if (infoBox) {
-      if (isIOS) {
-        infoBox.innerHTML = `<strong>Sur iPhone / iPad :</strong><br>1. Appuyez sur le bouton <strong>Partager</strong> <i class="fa-solid fa-arrow-up-from-bracket"></i> en bas de Safari.<br>2. Choisissez <strong>« Sur l'écran d'accueil »</strong> ➕.`;
-      } else {
-        infoBox.innerHTML = `<strong>Installation rapide :</strong><br>• <strong>Sur PC/Mac :</strong> Cliquez sur l'icône d'installation dans la barre d'adresse en haut à droite 🖥️.<br>• <strong>Sur Android :</strong> Ouvrez le menu Chrome (3 points) puis cliquez sur <strong>« Installer l'application »</strong>.`;
-      }
-      infoBox.style.display = 'block';
-      if (actions) {
-        actions.innerHTML = `<button type="button" class="btn btn-dark w-100 fw-bold" onclick="dismissAutoInstallPrompt()" style="border-radius: 8px; font-size: 0.85rem;">J'ai compris</button>`;
-      }
+    const choice = await deferredPwaPrompt.userChoice;
+    if (choice && choice.outcome === 'accepted') {
+      console.log('[PWA] Installation acceptée par l\'utilisateur.');
+      showPwaToast('🎉 Mandel est en cours d\'installation !', 'success');
+      dismissAutoInstallPrompt();
+    }
+    deferredPwaPrompt = null;
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = originalHtml;
+    }
+    return;
+  }
+
+  // Si le navigateur ne fournit pas de déclencheur programmatique direct
+  if (btn) {
+    btn.disabled = false;
+    btn.innerHTML = originalHtml;
+  }
+
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  const infoBox = document.getElementById('pwaManualInstructions');
+  const actions = document.getElementById('pwaInstallActionContainer');
+  if (infoBox) {
+    if (isIOS) {
+      infoBox.innerHTML = `<strong>Sur iPhone / iPad :</strong><br>1. Appuyez sur le bouton <strong>Partager</strong> <i class="fa-solid fa-arrow-up-from-bracket"></i> en bas de Safari.<br>2. Choisissez <strong>« Sur l'écran d'accueil »</strong> ➕.`;
+    } else {
+      infoBox.innerHTML = `<strong>Installation sur votre appareil :</strong><br>• <strong>Dans Chrome/Edge (PC) :</strong> Regardez tout en haut à droite dans la barre d'adresse, cliquez sur l'icône d'installation 🖥️ (ou Menu ⋮ > <em>« Enregistrer et partager »</em> > <em>« Installer Mandel »</em>).<br>• <strong>Sur Android :</strong> Ouvrez le menu Chrome (3 points ⋮) puis appuyez sur <strong>« Installer l'application »</strong>.`;
+    }
+    infoBox.style.display = 'block';
+    if (actions) {
+      actions.innerHTML = `<button type="button" class="btn btn-dark w-100 fw-bold" onclick="dismissAutoInstallPrompt()" style="border-radius: 8px; font-size: 0.85rem;"><i class="fa-solid fa-check me-1.5"></i> Compris</button>`;
     }
   }
 }
