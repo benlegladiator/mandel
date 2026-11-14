@@ -155,9 +155,9 @@ async function executePwaInstall() {
   const actions = document.getElementById('pwaInstallActionContainer');
   if (infoBox) {
     if (isIOS) {
-      infoBox.innerHTML = `<strong>Sur iPhone / iPad :</strong><br>1. Appuyez sur le bouton <strong>Partager</strong> <i class="fa-solid fa-arrow-up-from-bracket"></i> en bas de Safari.<br>2. Choisissez <strong>« Sur l'écran d'accueil »</strong> ➕.`;
+      infoBox.innerHTML = `<strong>Sur iPhone / iPad (Safari) :</strong><br>1. Appuyez sur le bouton <strong>Partager</strong> <i class="fa-solid fa-arrow-up-from-bracket"></i> en bas de Safari.<br>2. Choisissez <strong>« Sur l'écran d'accueil »</strong> ➕.`;
     } else {
-      infoBox.innerHTML = `<strong>Installation sur votre appareil :</strong><br>• <strong>Dans Chrome/Edge (PC) :</strong> Regardez tout en haut à droite dans la barre d'adresse, cliquez sur l'icône d'installation 🖥️ (ou Menu ⋮ > <em>« Enregistrer et partager »</em> > <em>« Installer Mandel »</em>).<br>• <strong>Sur Android :</strong> Ouvrez le menu Chrome (3 points ⋮) puis appuyez sur <strong>« Installer l'application »</strong>.`;
+      infoBox.innerHTML = `<strong>Installation sur votre appareil :</strong><br>• <strong>Sur Android :</strong> Ouvrez le menu de Chrome (les 3 points <strong>⋮</strong> en haut à droite) puis appuyez sur <strong>« Ajouter à l'écran d'accueil »</strong> (ou <em>« Installer l'application »</em>).<br>• <strong>Sur PC / Mac :</strong> Cliquez sur l'icône d'écran 🖥️ dans la barre d'adresse de Chrome en haut à droite (ou Menu ⋮ > <em>« Enregistrer et partager »</em> > <em>« Installer Mandel »</em>).`;
     }
     infoBox.style.display = 'block';
     if (actions) {
