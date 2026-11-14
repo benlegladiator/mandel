@@ -157,7 +157,7 @@
           
           <div class="modal-header bg-light border-bottom no-print py-2.5 px-3">
             <h6 class="modal-title fw-bold text-dark d-flex align-items-center gap-2 mb-0" id="offlineInvoiceModalLabel">
-              <i class="fa-solid fa-receipt text-success"></i> Facture Hors-Ligne Provisoire
+              <i class="fa-solid fa-receipt text-success"></i> Facture de Vente
             </h6>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
           </div>
@@ -174,11 +174,6 @@
                 <h5 class="fw-bold mb-0" style="letter-spacing: -0.5px; font-size: 16px;">Ets MANDEL</h5>
                 <div class="fw-semibold text-uppercase" id="offInvShopName" style="font-size: 11px; color: #475569;">Boutique Mandel</div>
                 <div style="font-size: 10px; color: #64748b;" id="offInvShopContact">Yaoundé, Cameroun</div>
-                <div class="mt-1">
-                  <span class="badge bg-warning text-dark border border-warning-subtle fw-bold" style="font-size: 9px; padding: 2px 6px;">
-                    <i class="fa-solid fa-wifi-slash me-1"></i>FACTURE HORS-LIGNE
-                  </span>
-                </div>
               </div>
 
               <hr style="border-top: 1px dashed #000; margin: 6px 0;">
@@ -186,7 +181,7 @@
               <!-- Infos Transaction -->
               <div class="mb-2" style="font-size: 11px;">
                 <div class="d-flex justify-content-between">
-                  <span><strong>Facture N° :</strong> <span id="offInvReference" class="fw-bold">FAC-OFF-00001</span></span>
+                  <span><strong>Facture N° :</strong> <span id="offInvReference" class="fw-bold">FAC-00001</span></span>
                   <span id="offInvDate" class="text-secondary small">14/11/2026 05:00</span>
                 </div>
                 <div><strong>Client :</strong> <span id="offInvClient">Client comptoir</span></div>
@@ -250,12 +245,10 @@
               <hr style="border-top: 1px dashed #000; margin: 8px 0 6px 0;">
 
               <!-- Bas de Ticket -->
-              <div class="text-center text-muted" style="font-size: 9px; line-height: 1.3;">
+              <div class="text-center text-muted" style="font-size: 9.5px; line-height: 1.3;">
                 <p class="mb-0 fw-bold text-dark">Merci de votre confiance !</p>
                 <p class="mb-0">Les articles vendus ne sont ni repris, ni échangés.</p>
-                <p class="mb-0 mt-1" style="font-size: 8px;">
-                  Facture enregistrée en mémoire locale autonome • Mandel Papeterie ERP
-                </p>
+                <p class="mt-2 mb-0" style="font-size: 8.5px;">Mandel Stock Manager &copy; <?= date('Y') ?></p>
               </div>
 
             </div>

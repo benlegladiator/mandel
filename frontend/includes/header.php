@@ -111,13 +111,13 @@ if ($_SESSION['active_shop_id'] == 0) {
         <meta name="apple-mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
         <meta name="apple-mobile-web-app-title" content="Mandel">
-        <script src="assets/js/pwa-offline-sync.js?v=<?= file_exists(__DIR__ . '/../assets/js/pwa-offline-sync.js') ? filemtime(__DIR__ . '/../assets/js/pwa-offline-sync.js') : time() ?>" defer></script>
+        <script src="assets/js/pwa-offline-sync.js?v=<?= file_exists(__DIR__ . '/../assets/js/pwa-offline-sync.js') ? filemtime(__DIR__ . '/../assets/js/pwa-offline-sync.js') : time() ?>"></script>
     <?php else: ?>
         <script>
             window.PWA_DISABLED = true;
             window.PWA_DISABLED_MSG = <?= json_encode(defined('PWA_DISABLED_MESSAGE') ? PWA_DISABLED_MESSAGE : 'Service PWA non disponible pour l\'instant. Veuillez contacter l\'opérateur d\'hébergement.') ?>;
         </script>
-        <script src="assets/js/pwa-offline-sync.js?v=<?= file_exists(__DIR__ . '/../assets/js/pwa-offline-sync.js') ? filemtime(__DIR__ . '/../assets/js/pwa-offline-sync.js') : time() ?>" defer></script>
+        <script src="assets/js/pwa-offline-sync.js?v=<?= file_exists(__DIR__ . '/../assets/js/pwa-offline-sync.js') ? filemtime(__DIR__ . '/../assets/js/pwa-offline-sync.js') : time() ?>"></script>
     <?php endif; ?>
     <!-- Custom Style Sheet with Cache Buster -->
     <link href="assets/css/style.css?v=<?= file_exists(__DIR__ . '/../assets/css/style.css') ? filemtime(__DIR__ . '/../assets/css/style.css') : time() ?>" rel="stylesheet">

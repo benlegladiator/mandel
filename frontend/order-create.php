@@ -736,10 +736,21 @@ document.addEventListener('DOMContentLoaded', function() {
     // Soumission du formulaire (Online direct ou Hors-Ligne via IndexedDB)
     if (orderForm) {
         orderForm.addEventListener('submit', async function(e) {
-            // Si l'appareil est hors-ligne (coupure réseau ou mode forcé) et que le service PWA est actif
+            // Si l'appareil est hors-ligne (coupure réseau ou mode forcé)
             const isOffline = (!navigator.onLine || (typeof isForcedOffline === 'function' && isForcedOffline()));
-            if (isOffline && typeof saveOfflineOrder === 'function' && !window.PWA_DISABLED) {
+            if (isOffline) {
                 e.preventDefault();
+                e.stopPropagation();
+
+                if (window.PWA_DISABLED) {
+                    alert(window.PWA_DISABLED_MSG || "Vous n'êtes pas connecté à Internet et le mode hors-ligne est désactivé.");
+                    return;
+                }
+                
+                if (typeof saveOfflineOrder !== 'function') {
+                    alert("Initialisation de la caisse hors-ligne... Veuillez réessayer dans 2 secondes.");
+                    return;
+                }
 
                 const productSelects = tableBody.querySelectorAll('.product-select');
                 const qtyInputs = tableBody.querySelectorAll('.qty-input');

@@ -265,7 +265,7 @@ async function saveOfflineOrder(orderData) {
     orderData.saved_at = new Date().toISOString();
     if (!orderData.reference) {
       const offlineId = Date.now().toString().slice(-5);
-      orderData.reference = 'FAC-OFF-' + offlineId;
+      orderData.reference = 'FAC-' + offlineId;
     }
     const req = store.add(orderData);
     return new Promise((resolve) => {
@@ -724,7 +724,7 @@ async function printOfflineInvoice(orderInput) {
     return;
   }
 
-  const ref = ord.reference || ('FAC-OFF-' + (ord.id ? String(ord.id).padStart(5, '0') : Date.now().toString().slice(-5)));
+  const ref = ord.reference || ('FAC-' + (ord.id ? String(ord.id).padStart(5, '0') : Date.now().toString().slice(-5)));
   const dt = ord.saved_at ? new Date(ord.saved_at).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' }) : new Date().toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' });
 
   const shopNameEl = document.getElementById('offInvShopName');
@@ -829,5 +829,12 @@ async function printOfflineInvoice(orderInput) {
   }
 }
 
+window.saveOfflineOrder = saveOfflineOrder;
+window.getOfflineOrders = getOfflineOrders;
+window.isAppOffline = isAppOffline;
+window.isForcedOffline = isForcedOffline;
+window.handleForceOfflineToggle = handleForceOfflineToggle;
 window.printOfflineInvoice = printOfflineInvoice;
 window.printOfflineInvoiceModal = printOfflineInvoiceModal;
+window.syncOfflineData = syncOfflineData;
+window.triggerManualSync = triggerManualSync;
