@@ -149,6 +149,130 @@
         </div>
       </div>
     </div>
+
+    <!-- Modal Impression Facture Hors-Ligne Mandel -->
+    <div class="modal fade" id="offlineInvoiceModal" tabindex="-1" aria-labelledby="offlineInvoiceModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" style="max-width: 500px;">
+        <div class="modal-content shadow-lg border-0" style="border-radius: 16px;">
+          
+          <div class="modal-header bg-light border-bottom no-print py-2.5 px-3">
+            <h6 class="modal-title fw-bold text-dark d-flex align-items-center gap-2 mb-0" id="offlineInvoiceModalLabel">
+              <i class="fa-solid fa-receipt text-success"></i> Facture Hors-Ligne Provisoire
+            </h6>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+          </div>
+
+          <div class="modal-body p-3 bg-slate-50" id="offlineInvoiceModalBody">
+            <!-- Zone imprimable ticket Mandel -->
+            <div id="offlineInvoicePrintArea" class="bg-white p-3 border rounded-3 shadow-sm mx-auto" style="max-width: 440px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 11px; color: #000; line-height: 1.35;">
+              
+              <!-- En-tête ticket avec Logo Officiel Mandel -->
+              <div class="text-center mb-3">
+                <div class="mb-1">
+                  <img src="assets/images/logo.png" alt="Mandel" style="height: 44px; width: auto; object-fit: contain;">
+                </div>
+                <h5 class="fw-bold mb-0" style="letter-spacing: -0.5px; font-size: 16px;">Ets MANDEL</h5>
+                <div class="fw-semibold text-uppercase" id="offInvShopName" style="font-size: 11px; color: #475569;">Boutique Mandel</div>
+                <div style="font-size: 10px; color: #64748b;" id="offInvShopContact">Yaoundé, Cameroun</div>
+                <div class="mt-1">
+                  <span class="badge bg-warning text-dark border border-warning-subtle fw-bold" style="font-size: 9px; padding: 2px 6px;">
+                    <i class="fa-solid fa-wifi-slash me-1"></i>FACTURE HORS-LIGNE
+                  </span>
+                </div>
+              </div>
+
+              <hr style="border-top: 1px dashed #000; margin: 6px 0;">
+
+              <!-- Infos Transaction -->
+              <div class="mb-2" style="font-size: 11px;">
+                <div class="d-flex justify-content-between">
+                  <span><strong>Facture N° :</strong> <span id="offInvReference" class="fw-bold">FAC-OFF-00001</span></span>
+                  <span id="offInvDate" class="text-secondary small">14/11/2026 05:00</span>
+                </div>
+                <div><strong>Client :</strong> <span id="offInvClient">Client comptoir</span></div>
+                <div><strong>Vendeur :</strong> <span id="offInvUser">Personnel</span></div>
+                <div><strong>Règlement :</strong> <span id="offInvPaymentMethod" class="fw-bold">Espèces</span></div>
+              </div>
+
+              <hr style="border-top: 1px dashed #000; margin: 6px 0;">
+
+              <!-- Tableau des Articles -->
+              <table class="w-100 mb-2" style="font-size: 11px; border-collapse: collapse;">
+                <thead>
+                  <tr style="border-bottom: 1px solid #000;">
+                    <th class="text-start py-1" style="width: 55%;">Désignation</th>
+                    <th class="text-center py-1" style="width: 15%;">Qté</th>
+                    <th class="text-end py-1" style="width: 30%;">Total</th>
+                  </tr>
+                </thead>
+                <tbody id="offInvItemsBody">
+                  <!-- Injecté dynamiquement par JS -->
+                </tbody>
+              </table>
+
+              <hr style="border-top: 1px dashed #000; margin: 6px 0;">
+
+              <!-- Totaux -->
+              <div id="offInvTotalsArea" style="font-size: 11px;">
+                <div class="d-flex justify-content-between">
+                  <span>Sous-Total :</span>
+                  <span id="offInvSubtotal" class="fw-semibold">0 FCFA</span>
+                </div>
+                <div class="d-flex justify-content-between text-danger d-none" id="offInvDiscountRow">
+                  <span>Remise accordée :</span>
+                  <span id="offInvDiscount">0 FCFA</span>
+                </div>
+                <div class="d-flex justify-content-between fw-bold pt-1 mt-1" style="border-top: 1px solid #000; font-size: 13px;">
+                  <span>NET À PAYER :</span>
+                  <span id="offInvTotal" class="fw-extrabold" style="font-size: 15px;">0 FCFA</span>
+                </div>
+                <div id="offInvCreditDetails" class="d-none mt-1 pt-1" style="border-top: 1px dotted #ccc;">
+                  <div class="d-flex justify-content-between text-success">
+                    <span>Acompte Reçu :</span>
+                    <span id="offInvAmountPaid">0 FCFA</span>
+                  </div>
+                  <div class="d-flex justify-content-between text-danger fw-bold">
+                    <span>Reste à Payer :</span>
+                    <span id="offInvRemaining">0 FCFA</span>
+                  </div>
+                  <div class="d-flex justify-content-between text-muted small" id="offInvDueDateRow">
+                    <span>Date Limite de Paiement :</span>
+                    <span id="offInvDueDate">-</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Notes -->
+              <div id="offInvNotesRow" class="mt-2 p-1.5 bg-light border rounded small d-none" style="font-size: 10px;">
+                <strong>Note :</strong> <span id="offInvNotes"></span>
+              </div>
+
+              <hr style="border-top: 1px dashed #000; margin: 8px 0 6px 0;">
+
+              <!-- Bas de Ticket -->
+              <div class="text-center text-muted" style="font-size: 9px; line-height: 1.3;">
+                <p class="mb-0 fw-bold text-dark">Merci de votre confiance !</p>
+                <p class="mb-0">Les articles vendus ne sont ni repris, ni échangés.</p>
+                <p class="mb-0 mt-1" style="font-size: 8px;">
+                  Facture enregistrée en mémoire locale autonome • Mandel Papeterie ERP
+                </p>
+              </div>
+
+            </div>
+          </div>
+
+          <div class="modal-footer bg-light border-top no-print d-flex justify-content-between py-2 px-3">
+            <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">
+              <i class="fa-solid fa-plus me-1"></i> Nouvelle Vente
+            </button>
+            <button type="button" class="btn btn-success btn-sm fw-bold px-3 shadow-sm" onclick="printOfflineInvoiceModal()">
+              <i class="fa-solid fa-print me-1.5"></i> Imprimer le Ticket
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>

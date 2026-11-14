@@ -810,3 +810,59 @@ h6 { font-size: 0.68rem; }
 .animate-pulse {
     animation: mandelPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
+
+/* Impression de la facture Hors-Ligne Mandel */
+@media print {
+    body.printing-offline-invoice {
+        background: #ffffff !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    body.printing-offline-invoice * {
+        visibility: hidden !important;
+    }
+    body.printing-offline-invoice #offlineInvoiceModal,
+    body.printing-offline-invoice #offlineInvoiceModalBody,
+    body.printing-offline-invoice #offlineInvoicePrintArea,
+    body.printing-offline-invoice #offlineInvoicePrintArea * {
+        visibility: visible !important;
+    }
+    body.printing-offline-invoice #offlineInvoiceModal {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        display: block !important;
+        background: transparent !important;
+    }
+    body.printing-offline-invoice .modal-dialog,
+    body.printing-offline-invoice .modal-content,
+    body.printing-offline-invoice #offlineInvoiceModalBody {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: none !important;
+        box-shadow: none !important;
+        background: transparent !important;
+    }
+    body.printing-offline-invoice #offlineInvoicePrintArea {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        max-width: 500px !important;
+        margin: 0 auto !important;
+        padding: 10px !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+    body.printing-offline-invoice .no-print,
+    body.printing-offline-invoice .modal-header,
+    body.printing-offline-invoice .modal-footer,
+    body.printing-offline-invoice .modal-backdrop {
+        display: none !important;
+    }
+}

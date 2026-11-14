@@ -772,14 +772,31 @@ document.addEventListener('DOMContentLoaded', function() {
                 const pmSelect = document.getElementById('payment_method');
                 const discountInput = document.getElementById('discount');
                 const notesInput = document.getElementById('notes');
+                const amountPaidInput = document.getElementById('amount_paid');
+                const dueDateInput = document.getElementById('due_date');
+
+                const clientOpt = clientSelect && clientSelect.selectedOptions ? clientSelect.selectedOptions[0] : null;
+                const clientName = clientOpt && clientOpt.value ? clientOpt.textContent.trim() : 'Client comptoir';
+                const shopOpt = shopSelect && shopSelect.selectedOptions ? shopSelect.selectedOptions[0] : null;
+                const shopName = shopOpt ? shopOpt.textContent.trim() : '<?= addslashes($current_shop["name"] ?? "Boutique Mandel") ?>';
+                const shopAddress = '<?= addslashes($current_shop["address"] ?? "Yaoundé, Cameroun") ?>';
+                const shopPhone = '<?= addslashes($current_shop["phone"] ?? "") ?>';
+                const userName = '<?= addslashes($_SESSION["user_name"] ?? "Personnel") ?>';
 
                 const orderData = {
                     shop_id: parseInt(shopSelect ? shopSelect.value : '<?= $active_shop_id ?>'),
+                    shop_name: shopName,
+                    shop_address: shopAddress,
+                    shop_phone: shopPhone,
                     user_id: <?= intval($_SESSION['user_id'] ?? 1) ?>,
+                    user_name: userName,
                     order_type: '<?= $type ?>',
                     client_id: parseInt(clientSelect ? clientSelect.value : 0) || null,
+                    client_name: clientName,
                     supplier_id: parseInt(supplierSelect ? supplierSelect.value : 0) || null,
                     payment_method: pmSelect ? pmSelect.value : 'CASH',
+                    amount_paid: parseFloat(amountPaidInput ? amountPaidInput.value : 0) || 0,
+                    due_date: (dueDateInput ? dueDateInput.value : null),
                     discount: parseFloat(discountInput ? discountInput.value : 0) || 0,
                     notes: (notesInput ? notesInput.value.trim() : ''),
                     items: items
@@ -791,24 +808,36 @@ document.addEventListener('DOMContentLoaded', function() {
                     submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i>Sauvegarde locale...';
                 }
 
-                const saved = await saveOfflineOrder(orderData);
-                if (saved) {
+                const savedOrder = await saveOfflineOrder(orderData);
+                if (savedOrder) {
                     if (typeof showPwaToast === 'function') {
-                        showPwaToast('🎉 Vente enregistrée avec succès en local (Mode Hors-Ligne) ! Elle sera automatiquement synchronisée dès le retour d\'Internet.', 'success');
-                    } else {
-                        alert("Vente enregistrée en local (Mode Hors-Ligne). Elle sera synchronisée au retour du réseau.");
+                        showPwaToast('🎉 Vente enregistrée avec succès en local (Mode Hors-Ligne) !', 'success');
                     }
                     if (typeof updateOfflineBanner === 'function') {
                         updateOfflineBanner();
                     }
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1800);
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        updateOrderCreateOfflineUI();
+                    }
+                    
+                    // Réinitialiser le formulaire pour la vente suivante
+                    if (orderForm) orderForm.reset();
+                    if (tableBody) {
+                        tableBody.innerHTML = '';
+                        addNewRow();
+                    }
+                    recalculateGrandTotal();
+
+                    // Ouvrir immédiatement la facture pour impression
+                    if (typeof printOfflineInvoice === 'function') {
+                        printOfflineInvoice(savedOrder);
+                    }
                 } else {
                     alert("Erreur lors de l'enregistrement hors-ligne. Veuillez réessayer.");
                     if (submitBtn) {
                         submitBtn.disabled = false;
-                        submitBtn.innerHTML = '<i class="fa-solid fa-check-circle me-2"></i><?= $type === 'SALE' ? 'Valider la Vente' : 'Valider le Ravitaillement' ?>';
+                        updateOrderCreateOfflineUI();
                     }
                 }
                 return;

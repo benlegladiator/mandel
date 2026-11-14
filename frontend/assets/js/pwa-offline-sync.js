@@ -263,12 +263,18 @@ async function saveOfflineOrder(orderData) {
     const tx = db.transaction('offline_orders', 'readwrite');
     const store = tx.objectStore('offline_orders');
     orderData.saved_at = new Date().toISOString();
-    store.add(orderData);
+    if (!orderData.reference) {
+      const offlineId = Date.now().toString().slice(-5);
+      orderData.reference = 'FAC-OFF-' + offlineId;
+    }
+    const req = store.add(orderData);
     return new Promise((resolve) => {
-      tx.oncomplete = () => {
+      req.onsuccess = (e) => {
+        orderData.id = e.target.result;
         updateNetworkIndicators();
-        resolve(true);
+        resolve(orderData);
       };
+      req.onerror = () => resolve(false);
     });
   } catch (err) {
     console.error('[OfflineDB] Erreur sauvegarde hors-ligne:', err);
@@ -497,11 +503,12 @@ async function renderOfflineModalData() {
 
         tr.innerHTML = `
           <td class="fw-semibold text-muted">${dt}</td>
-          <td class="fw-bold">${ord.client_id ? 'Client #' + ord.client_id : 'Client comptoir'}</td>
+          <td class="fw-bold">${ord.client_name || (ord.client_id ? 'Client #' + ord.client_id : 'Client comptoir')}</td>
           <td class="small" style="max-width: 250px;"><span class="text-truncate d-inline-block" style="max-width: 240px;" title="${itemsDesc}">${itemsDesc}</span></td>
           <td class="text-center"><span class="badge ${ord.payment_method === 'CASH' ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-light text-dark border'}">${pmStr}</span></td>
           <td class="text-end fw-bold text-slate-800">${formatMoney(totalAmt)} F</td>
-          <td class="text-center">
+          <td class="text-center text-nowrap">
+            <button type="button" class="btn btn-outline-primary btn-sm p-1 me-1" onclick="printOfflineInvoice(${ord.id})" title="Imprimer le ticket"><i class="fa-solid fa-print"></i></button>
             <button type="button" class="btn btn-outline-danger btn-sm p-1" onclick="deleteOfflineOrder(${ord.id})" title="Supprimer"><i class="fa-solid fa-trash"></i></button>
           </td>
         `;
@@ -690,3 +697,137 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Alias pour rétro-compatibilité
 window.updateOfflineBanner = updateNetworkIndicators;
+
+// -------------------------------------------------------------
+// GESTION DE L'IMPRESSION DES FACTURES HORS-LIGNE
+// -------------------------------------------------------------
+function printOfflineInvoiceModal() {
+  document.body.classList.add('printing-offline-invoice');
+  window.print();
+  setTimeout(() => {
+    document.body.classList.remove('printing-offline-invoice');
+  }, 1000);
+}
+
+async function printOfflineInvoice(orderInput) {
+  let ord = null;
+  if (typeof orderInput === 'object' && orderInput !== null) {
+    ord = orderInput;
+  } else {
+    const id = parseInt(orderInput);
+    const all = await getOfflineOrders();
+    ord = all.find(o => o.id === id);
+  }
+
+  if (!ord) {
+    alert("Impossible de charger la facture hors-ligne demandée.");
+    return;
+  }
+
+  const ref = ord.reference || ('FAC-OFF-' + (ord.id ? String(ord.id).padStart(5, '0') : Date.now().toString().slice(-5)));
+  const dt = ord.saved_at ? new Date(ord.saved_at).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' }) : new Date().toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' });
+
+  const shopNameEl = document.getElementById('offInvShopName');
+  const shopContactEl = document.getElementById('offInvShopContact');
+  const refEl = document.getElementById('offInvReference');
+  const dateEl = document.getElementById('offInvDate');
+  const clientEl = document.getElementById('offInvClient');
+  const userEl = document.getElementById('offInvUser');
+  const pmEl = document.getElementById('offInvPaymentMethod');
+  const itemsBody = document.getElementById('offInvItemsBody');
+  const subtotalEl = document.getElementById('offInvSubtotal');
+  const discountRow = document.getElementById('offInvDiscountRow');
+  const discountEl = document.getElementById('offInvDiscount');
+  const totalEl = document.getElementById('offInvTotal');
+  const creditDetails = document.getElementById('offInvCreditDetails');
+  const amountPaidEl = document.getElementById('offInvAmountPaid');
+  const remainingEl = document.getElementById('offInvRemaining');
+  const dueDateRow = document.getElementById('offInvDueDateRow');
+  const dueDateEl = document.getElementById('offInvDueDate');
+  const notesRow = document.getElementById('offInvNotesRow');
+  const notesEl = document.getElementById('offInvNotes');
+
+  if (shopNameEl) shopNameEl.textContent = ord.shop_name || 'Ets MANDEL';
+  if (shopContactEl) shopContactEl.textContent = (ord.shop_address || 'Yaoundé, Cameroun') + (ord.shop_phone ? ' • Tél : ' + ord.shop_phone : '');
+  if (refEl) refEl.textContent = ref;
+  if (dateEl) dateEl.textContent = dt;
+  if (clientEl) clientEl.textContent = ord.client_name || (ord.client_id ? 'Client #' + ord.client_id : 'Client comptoir');
+  if (userEl) userEl.textContent = ord.user_name || 'Personnel';
+
+  const pmLabels = { 'CASH': 'Espèces (CASH)', 'MOBILE_MONEY': 'Mobile Money (MOMO)', 'CREDIT': 'À Crédit', 'CARD': 'Carte Bancaire', 'VIREMENT': 'Virement' };
+  if (pmEl) pmEl.textContent = pmLabels[ord.payment_method] || ord.payment_method;
+
+  let subtotal = 0;
+  if (itemsBody) {
+    itemsBody.innerHTML = '';
+    (ord.items || []).forEach(it => {
+      const q = parseInt(it.quantity) || 1;
+      const p = parseFloat(it.price) || 0;
+      const lineTot = q * p;
+      subtotal += lineTot;
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="text-start py-1" style="border-bottom: 1px dotted #cbd5e1;">
+          <div class="fw-bold">${it.product_name || 'Article'}</div>
+          <small class="text-secondary" style="font-size: 9.5px;">${formatMoney(p)} FCFA / pièce</small>
+        </td>
+        <td class="text-center py-1" style="border-bottom: 1px dotted #cbd5e1;">${q}</td>
+        <td class="text-end py-1 fw-bold" style="border-bottom: 1px dotted #cbd5e1;">${formatMoney(lineTot)}</td>
+      `;
+      itemsBody.appendChild(tr);
+    });
+  }
+
+  const discount = parseFloat(ord.discount) || 0;
+  const netTotal = Math.max(0, subtotal - discount);
+
+  if (subtotalEl) subtotalEl.textContent = formatMoney(subtotal) + ' FCFA';
+  if (discountRow && discountEl) {
+    if (discount > 0) {
+      discountEl.textContent = '- ' + formatMoney(discount) + ' FCFA';
+      discountRow.classList.remove('d-none');
+    } else {
+      discountRow.classList.add('d-none');
+    }
+  }
+  if (totalEl) totalEl.textContent = formatMoney(netTotal) + ' FCFA';
+
+  if (creditDetails) {
+    if (ord.payment_method === 'CREDIT') {
+      const paid = parseFloat(ord.amount_paid) || 0;
+      const rem = Math.max(0, netTotal - paid);
+      if (amountPaidEl) amountPaidEl.textContent = formatMoney(paid) + ' FCFA';
+      if (remainingEl) remainingEl.textContent = formatMoney(rem) + ' FCFA';
+      if (dueDateRow && dueDateEl) {
+        if (ord.due_date) {
+          dueDateEl.textContent = new Date(ord.due_date).toLocaleDateString('fr-FR');
+          dueDateRow.classList.remove('d-none');
+        } else {
+          dueDateRow.classList.add('d-none');
+        }
+      }
+      creditDetails.classList.remove('d-none');
+    } else {
+      creditDetails.classList.add('d-none');
+    }
+  }
+
+  if (notesRow && notesEl) {
+    if (ord.notes && ord.notes.trim()) {
+      notesEl.textContent = ord.notes.trim();
+      notesRow.classList.remove('d-none');
+    } else {
+      notesRow.classList.add('d-none');
+    }
+  }
+
+  const modalEl = document.getElementById('offlineInvoiceModal');
+  if (modalEl) {
+    const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    modal.show();
+  }
+}
+
+window.printOfflineInvoice = printOfflineInvoice;
+window.printOfflineInvoiceModal = printOfflineInvoiceModal;
