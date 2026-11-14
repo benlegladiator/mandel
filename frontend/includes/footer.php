@@ -21,7 +21,134 @@
       </div>
     </div>
 
-    <!-- Bootstrap 5 Bundle JS (includes Popper) -->
+    <!-- Modal Centre Hors-Ligne & Synchronisation Mandel -->
+    <div class="modal fade" id="offlineSyncModal" tabindex="-1" aria-labelledby="offlineSyncModalLabel" aria-hidden="true" style="z-index: 1080;">
+      <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+          
+          <!-- Header Modal -->
+          <div class="modal-header border-bottom pb-3">
+            <div class="d-flex align-items-center gap-2">
+              <div class="p-2 rounded-3 bg-primary-subtle text-primary">
+                <i class="fa-solid fa-wifi fa-lg"></i>
+              </div>
+              <div>
+                <h5 class="modal-title fw-bold text-slate-900 mb-0" id="offlineSyncModalLabel">
+                  Centre Hors-Ligne & Synchronisation
+                </h5>
+                <small class="text-secondary">Suivi du cash hors-ligne et synchronisation des données locales</small>
+              </div>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+
+          <!-- Body Modal -->
+          <div class="modal-body p-4">
+            
+            <!-- Carte Statut Réseau & Interrupteur de Mode Forcé -->
+            <div class="card border-0 bg-light rounded-3 p-3 mb-4">
+              <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div>
+                  <div class="small text-secondary fw-semibold mb-1">État actuel de la connexion</div>
+                  <div class="d-flex align-items-center gap-2">
+                    <span id="modalNetworkStatusBadge" class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1.5 fw-bold" style="font-size: 0.85rem;">
+                      <i class="fa-solid fa-circle-check me-1"></i>Connecté à Internet
+                    </span>
+                    <span id="modalSyncTimestamp" class="small text-muted" style="font-size: 0.78rem;"></span>
+                  </div>
+                </div>
+
+                <!-- Bouton / Switch pour forcer le mode hors-ligne -->
+                <div class="d-flex align-items-center gap-2 p-2 bg-white rounded-3 border">
+                  <div class="form-check form-switch mb-0">
+                    <input class="form-check-input" type="checkbox" role="switch" id="forceOfflineToggle" onchange="handleForceOfflineToggle(this.checked)" style="cursor: pointer;">
+                    <label class="form-check-label fw-bold small text-slate-800" for="forceOfflineToggle" style="cursor: pointer;">
+                      Forcer le Mode Hors-Ligne
+                    </label>
+                  </div>
+                  <i class="fa-solid fa-circle-question text-muted small" title="Activez pour enregistrer vos ventes en local même si vous êtes connecté (utile en cas de connexion lente ou instable)."></i>
+                </div>
+              </div>
+            </div>
+
+            <!-- KPIs Récapitulatif : Cash hors-ligne, Ventes totales, Nombre de factures -->
+            <div class="row g-3 mb-4">
+              <div class="col-12 col-md-4">
+                <div class="card border border-success-subtle bg-success bg-opacity-10 rounded-3 p-3 text-center">
+                  <div class="small fw-bold text-success text-uppercase mb-1">
+                    <i class="fa-solid fa-money-bill-wave me-1"></i>Cash Hors-Ligne (Espèces)
+                  </div>
+                  <div class="fs-4 fw-extrabold text-success" id="offlineCashTotal">0 FCFA</div>
+                  <div class="small text-muted" style="font-size: 0.75rem;">Espèces physiques en caisse</div>
+                </div>
+              </div>
+              <div class="col-12 col-md-4">
+                <div class="card border border-primary-subtle bg-primary bg-opacity-10 rounded-3 p-3 text-center">
+                  <div class="small fw-bold text-primary text-uppercase mb-1">
+                    <i class="fa-solid fa-file-invoice-dollar me-1"></i>Total Ventes Locales
+                  </div>
+                  <div class="fs-4 fw-extrabold text-primary" id="offlineSalesTotal">0 FCFA</div>
+                  <div class="small text-muted" style="font-size: 0.75rem;">Tous modes de règlement</div>
+                </div>
+              </div>
+              <div class="col-12 col-md-4">
+                <div class="card border border-warning-subtle bg-warning bg-opacity-10 rounded-3 p-3 text-center">
+                  <div class="small fw-bold text-warning-emphasis text-uppercase mb-1">
+                    <i class="fa-solid fa-clock-rotate-left me-1"></i>Ventes en Attente
+                  </div>
+                  <div class="fs-4 fw-extrabold text-slate-800" id="offlineCount">0</div>
+                  <div class="small text-muted" style="font-size: 0.75rem;">À synchroniser au serveur</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bouton d'action Synchroniser Manuellement -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h6 class="fw-bold text-slate-800 mb-0">
+                <i class="fa-solid fa-list-check text-primary me-2"></i>Transactions enregistrées localement
+              </h6>
+              <button type="button" class="btn btn-primary btn-sm fw-bold shadow-sm px-3" id="manualSyncBtn" onclick="triggerManualSync()">
+                <i class="fa-solid fa-arrows-rotate me-1" id="manualSyncIcon"></i>Synchroniser Maintenant
+              </button>
+            </div>
+
+            <!-- Tableau des ventes enregistrées hors-ligne -->
+            <div class="table-responsive border rounded-3 bg-white" style="max-height: 280px;">
+              <table class="table table-sm table-hover align-middle mb-0" style="font-size: 0.82rem;">
+                <thead class="table-light sticky-top">
+                  <tr>
+                    <th style="width: 130px;">Enregistré le</th>
+                    <th>Client / Contact</th>
+                    <th>Articles & Quantités</th>
+                    <th style="width: 90px;" class="text-center">Règlement</th>
+                    <th style="width: 100px;" class="text-end">Montant</th>
+                    <th style="width: 50px;" class="text-center">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="offlineOrdersTableBody">
+                  <!-- Rempli dynamiquement en JS -->
+                </tbody>
+              </table>
+            </div>
+
+            <div id="offlineEmptyState" class="text-center py-4 text-muted d-none">
+              <i class="fa-solid fa-circle-check text-success fa-2x mb-2"></i>
+              <div>Toutes vos ventes locales sont synchronisées avec le serveur central !</div>
+            </div>
+
+          </div>
+
+          <!-- Footer Modal -->
+          <div class="modal-footer border-top bg-light d-flex justify-content-between">
+            <div class="small text-secondary">
+              <i class="fa-solid fa-shield-halved me-1 text-primary"></i>Stockage sécurisé dans votre navigateur (IndexedDB)
+            </div>
+            <button type="button" class="btn btn-secondary btn-sm px-3" data-bs-dismiss="modal" style="border-radius: 8px;">Fermer</button>
+          </div>
+
+        </div>
+      </div>
+    </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>

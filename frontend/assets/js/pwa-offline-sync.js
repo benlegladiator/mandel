@@ -1,6 +1,6 @@
 /**
- * PWA & Offline Sync Manager - Mandel Papeterie
- * Gestion du mode hors-ligne avec verrouillage de licence configurable.
+ * PWA & Offline Sync Manager - Mandel Papeterie ERP
+ * Gestion complète du mode hors-ligne, cash local, bascule en-ligne/hors-ligne et synchronisation manuelle.
  */
 
 // Gestionnaire d'installation PWA via le bouton du Header
@@ -18,7 +18,7 @@ window.addEventListener('beforeinstallprompt', (e) => {
 
 function handlePwaInstallClick() {
   if (window.PWA_DISABLED) {
-    alert(window.PWA_DISABLED_MSG || "Service PWA & Mode Hors-Ligne non disponible pour l'instant. Veuillez contacter votre prestataire technique / hébergeur pour l'activation de ce service.");
+    alert(window.PWA_DISABLED_MSG || "Service PWA & Mode Hors-Ligne non disponible pour l'instant.");
     return;
   }
 
@@ -36,11 +36,9 @@ function handlePwaInstallClick() {
   }
 }
 
-// Si le service PWA est verrouillé par le développeur (Client non à jour de paiement)
+// Enregistrement du Service Worker
 if (window.PWA_DISABLED) {
-  console.log('[PWA Status] Service PWA & Mode Hors-Ligne actuellement désactivé.');
-
-  // Désenregistrer tout Service Worker existant pour bloquer le cache hors-ligne
+  console.log('[PWA Status] Service PWA & Mode Hors-Ligne désactivé.');
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.getRegistrations().then(registrations => {
       for (let registration of registrations) {
@@ -49,17 +47,44 @@ if (window.PWA_DISABLED) {
     });
   }
 } else {
-  // 1. Enregistrement du Service Worker si la licence PWA_OFFLINE_ENABLED === true
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./sw.js')
-        .then(reg => console.log('[PWA] Service Worker enregistré avec succès sur la portée:', reg.scope))
-        .catch(err => console.warn('[PWA] Échec de l\'enregistrement du Service Worker:', err));
+        .then(reg => console.log('[PWA] Service Worker actif, scope:', reg.scope))
+        .catch(err => console.warn('[PWA] Échec Service Worker:', err));
     });
   }
 }
 
-// 2. Initialisation d'IndexedDB pour le stockage hors-ligne
+// -------------------------------------------------------------
+// GESTION DU MODE HORS-LIGNE FORCÉ (MANUEL)
+// -------------------------------------------------------------
+function isForcedOffline() {
+  return localStorage.getItem('mandel_force_offline') === 'true';
+}
+
+function isAppOffline() {
+  return !navigator.onLine || isForcedOffline();
+}
+
+function handleForceOfflineToggle(enabled) {
+  localStorage.setItem('mandel_force_offline', enabled ? 'true' : 'false');
+  updateNetworkIndicators();
+  renderOfflineModalData();
+
+  if (enabled) {
+    showPwaToast('🟠 Mode Hors-Ligne FORCÉ activé. Vos ventes seront enregistrées en mémoire locale.', 'warning');
+  } else {
+    showPwaToast('🟢 Mode En Ligne réactivé. Connexion au serveur central rétablie.', 'success');
+    if (navigator.onLine) {
+      syncOfflineData();
+    }
+  }
+}
+
+// -------------------------------------------------------------
+// GESTION D'INDEXEDDB (STOCKAGE LOCAL HORS-LIGNE)
+// -------------------------------------------------------------
 const DB_NAME = 'MandelOfflineDB';
 const DB_VERSION = 1;
 
@@ -80,7 +105,7 @@ function openOfflineDB() {
 // Enregistrer une vente hors-ligne dans IndexedDB
 async function saveOfflineOrder(orderData) {
   if (window.PWA_DISABLED) {
-    alert(window.PWA_DISABLED_MSG || "Service web PWA non disponible pour l'instant. Veuillez contacter l'opérateur d'hébergement.");
+    alert(window.PWA_DISABLED_MSG || "Service PWA non disponible pour l'instant.");
     return false;
   }
   try {
@@ -90,12 +115,31 @@ async function saveOfflineOrder(orderData) {
     orderData.saved_at = new Date().toISOString();
     store.add(orderData);
     return new Promise((resolve) => {
-      tx.oncomplete = () => resolve(true);
+      tx.oncomplete = () => {
+        updateNetworkIndicators();
+        resolve(true);
+      };
     });
   } catch (err) {
     console.error('[OfflineDB] Erreur sauvegarde hors-ligne:', err);
     return false;
   }
+}
+
+// Récupérer toutes les ventes hors-ligne
+function getOfflineOrders() {
+  return new Promise(async (resolve) => {
+    try {
+      const db = await openOfflineDB();
+      const tx = db.transaction('offline_orders', 'readonly');
+      const store = tx.objectStore('offline_orders');
+      const req = store.getAll();
+      req.onsuccess = () => resolve(req.result || []);
+      req.onerror = () => resolve([]);
+    } catch (e) {
+      resolve([]);
+    }
+  });
 }
 
 // Compter les transactions hors-ligne en attente
@@ -115,9 +159,59 @@ async function getPendingOfflineCount() {
   }
 }
 
-// Synchroniser les commandes hors-ligne avec le serveur central
-async function syncOfflineData() {
-  if (window.PWA_DISABLED || !navigator.onLine) return;
+// Supprimer une vente hors-ligne par ID
+async function deleteOfflineOrder(id) {
+  if (!confirm("Voulez-vous vraiment supprimer définitivement cette vente hors-ligne de la mémoire locale ?")) return;
+  try {
+    const db = await openOfflineDB();
+    const tx = db.transaction('offline_orders', 'readwrite');
+    tx.objectStore('offline_orders').delete(id);
+    tx.oncomplete = () => {
+      showPwaToast("Vente locale supprimée avec succès.", 'info');
+      updateNetworkIndicators();
+      renderOfflineModalData();
+    };
+  } catch (e) {
+    console.error("Erreur suppression vente locale:", e);
+  }
+}
+
+// -------------------------------------------------------------
+// SYNCHRONISATION MANUELLE ET AUTOMATIQUE
+// -------------------------------------------------------------
+async function triggerManualSync() {
+  const btn = document.getElementById('manualSyncBtn');
+  const icon = document.getElementById('manualSyncIcon');
+
+  if (!navigator.onLine) {
+    alert("Impossible de synchroniser : Votre appareil est actuellement hors connexion Internet.");
+    return;
+  }
+
+  if (isForcedOffline()) {
+    if (confirm("Le mode hors-ligne forcé est actif. Souhaitez-vous le désactiver pour lancer la synchronisation maintenant ?")) {
+      handleForceOfflineToggle(false);
+    } else {
+      return;
+    }
+  }
+
+  if (btn) btn.disabled = true;
+  if (icon) icon.classList.add('fa-spin');
+
+  await syncOfflineData(true);
+
+  if (btn) btn.disabled = false;
+  if (icon) icon.classList.remove('fa-spin');
+  renderOfflineModalData();
+}
+
+async function syncOfflineData(isManual = false) {
+  if (window.PWA_DISABLED) return;
+  if (!navigator.onLine || isForcedOffline()) {
+    if (isManual) alert("Connexion Internet requise pour synchroniser avec le serveur.");
+    return;
+  }
 
   try {
     const db = await openOfflineDB();
@@ -126,12 +220,21 @@ async function syncOfflineData() {
 
     const getAllReq = store.getAll();
     getAllReq.onsuccess = async () => {
-      const pendingOrders = getAllReq.result;
-      if (!pendingOrders || pendingOrders.length === 0) return;
+      const pendingOrders = getAllReq.result || [];
+      if (pendingOrders.length === 0) {
+        if (isManual) {
+          showPwaToast("✅ Aucune vente en attente : tout est déjà synchronisé avec le serveur !", 'success');
+        }
+        updateNetworkIndicators();
+        renderOfflineModalData();
+        return;
+      }
 
-      console.log(`[PWA Sync] Début de la synchronisation de ${pendingOrders.length} commande(s) hors-ligne...`);
+      console.log(`[PWA Sync] Début synchronisation de ${pendingOrders.length} vente(s)...`);
 
       let syncedCount = 0;
+      let errorCount = 0;
+
       for (const orderItem of pendingOrders) {
         try {
           const resp = await fetch('backend/api/sync_offline.php', {
@@ -145,48 +248,139 @@ async function syncOfflineData() {
             syncedCount++;
             const delTx = db.transaction('offline_orders', 'readwrite');
             delTx.objectStore('offline_orders').delete(orderItem.id);
+          } else {
+            errorCount++;
+            console.warn('[PWA Sync] Rejet item:', result);
           }
         } catch (err) {
-          console.warn('[PWA Sync] Échec de synchro pour un item:', err);
+          errorCount++;
+          console.warn('[PWA Sync] Échec requête:', err);
         }
       }
 
       if (syncedCount > 0) {
-        showPwaToast(`🎉 ${syncedCount} vente(s) enregistrée(s) hors-ligne ont été synchronisée(s) avec succès !`, 'success');
-        updateOfflineBanner();
+        showPwaToast(`🎉 ${syncedCount} vente(s) hors-ligne synchronisée(s) avec succès !`, 'success');
+        localStorage.setItem('mandel_last_sync', new Date().toISOString());
+      }
+      if (errorCount > 0) {
+        showPwaToast(`⚠️ ${errorCount} vente(s) n'ont pas pu être synchronisées. Veuillez réessayer.`, 'warning');
+      }
+
+      updateNetworkIndicators();
+      renderOfflineModalData();
+
+      if (syncedCount > 0) {
         setTimeout(() => {
           if (window.location.pathname.includes('orders.php') || window.location.pathname.includes('caisse.php')) {
             window.location.reload();
           }
-        }, 2000);
+        }, 2200);
       }
     };
   } catch (err) {
-    console.error('[PWA Sync] Erreur globale synchro:', err);
+    console.error('[PWA Sync] Erreur synchro:', err);
   }
 }
 
-// 3. Gestionnaires d'événements réseau (Online / Offline)
-window.addEventListener('online', () => {
-  updateOfflineBanner();
-  if (!window.PWA_DISABLED) {
-    showPwaToast('🌐 Connexion rétablie ! Lancement de la synchronisation automatique...', 'info');
-    syncOfflineData();
-  }
-});
+// -------------------------------------------------------------
+// RENDU DU MODAL CENTRE HORS-LIGNE & CASH
+// -------------------------------------------------------------
+function formatMoney(n) {
+  return Math.round(n || 0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+}
 
-window.addEventListener('offline', () => {
-  updateOfflineBanner();
-  if (window.PWA_DISABLED) {
-    showPwaToast('⚠️ ' + (window.PWA_DISABLED_MSG || 'Service web non disponible. Veuillez contacter l\'opérateur d\'hébergement.'), 'warning');
-  } else {
-    showPwaToast('🔴 Vous êtes actuellement Hors-Ligne. Les nouvelles ventes seront enregistrées localement.', 'warning');
-  }
-});
+async function renderOfflineModalData() {
+  const orders = await getOfflineOrders();
 
-// Mise à jour de la bannière d'état réseau en haut de l'écran
-async function updateOfflineBanner() {
+  let totalCash = 0;
+  let totalSales = 0;
+
+  orders.forEach(o => {
+    const subtotal = (o.items || []).reduce((acc, it) => acc + (parseFloat(it.price) * parseInt(it.quantity)), 0);
+    const tot = Math.max(0, subtotal - (parseFloat(o.discount) || 0));
+    totalSales += tot;
+    if (o.payment_method === 'CASH') {
+      totalCash += tot;
+    }
+  });
+
+  const cashEl = document.getElementById('offlineCashTotal');
+  const salesEl = document.getElementById('offlineSalesTotal');
+  const countEl = document.getElementById('offlineCount');
+  const emptyEl = document.getElementById('offlineEmptyState');
+  const tableBody = document.getElementById('offlineOrdersTableBody');
+  const toggleEl = document.getElementById('forceOfflineToggle');
+  const statusBadgeEl = document.getElementById('modalNetworkStatusBadge');
+  const syncTimeEl = document.getElementById('modalSyncTimestamp');
+
+  if (cashEl) cashEl.textContent = formatMoney(totalCash) + ' FCFA';
+  if (salesEl) salesEl.textContent = formatMoney(totalSales) + ' FCFA';
+  if (countEl) countEl.textContent = orders.length;
+
+  if (toggleEl) {
+    toggleEl.checked = isForcedOffline();
+  }
+
+  if (statusBadgeEl) {
+    if (isForcedOffline()) {
+      statusBadgeEl.className = 'badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2.5 py-1.5 fw-bold';
+      statusBadgeEl.innerHTML = '<i class="fa-solid fa-hand me-1"></i>Mode Forcé Hors-Ligne';
+    } else if (!navigator.onLine) {
+      statusBadgeEl.className = 'badge bg-danger-subtle text-danger border border-danger-subtle px-2.5 py-1.5 fw-bold';
+      statusBadgeEl.innerHTML = '<i class="fa-solid fa-wifi-slash me-1"></i>Déconnecté d\'Internet';
+    } else {
+      statusBadgeEl.className = 'badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1.5 fw-bold';
+      statusBadgeEl.innerHTML = '<i class="fa-solid fa-circle-check me-1"></i>Connecté à Internet';
+    }
+  }
+
+  const lastSync = localStorage.getItem('mandel_last_sync');
+  if (syncTimeEl) {
+    syncTimeEl.textContent = lastSync ? ('Dernière synchro : ' + new Date(lastSync).toLocaleTimeString()) : '';
+  }
+
+  if (tableBody) {
+    tableBody.innerHTML = '';
+    if (orders.length === 0) {
+      if (emptyEl) emptyEl.classList.remove('d-none');
+    } else {
+      if (emptyEl) emptyEl.classList.add('d-none');
+      orders.forEach(ord => {
+        const tr = document.createElement('tr');
+        const dt = ord.saved_at ? new Date(ord.saved_at).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' }) : 'Récemment';
+        const itemsDesc = (ord.items || []).map(it => `${it.product_name || 'Article'} (x${it.quantity} @ ${formatMoney(it.price)} F)`).join(', ');
+        const subtotal = (ord.items || []).reduce((acc, it) => acc + (parseFloat(it.price) * parseInt(it.quantity)), 0);
+        const totalAmt = Math.max(0, subtotal - (parseFloat(ord.discount) || 0));
+        const pmLabels = { 'CASH': 'Espèces', 'MOBILE_MONEY': 'MOMO', 'CREDIT': 'Crédit', 'CARD': 'Carte', 'VIREMENT': 'Virement' };
+        const pmStr = pmLabels[ord.payment_method] || ord.payment_method;
+
+        tr.innerHTML = `
+          <td class="fw-semibold text-muted">${dt}</td>
+          <td class="fw-bold">${ord.client_id ? 'Client #' + ord.client_id : 'Client comptoir'}</td>
+          <td class="small" style="max-width: 250px;"><span class="text-truncate d-inline-block" style="max-width: 240px;" title="${itemsDesc}">${itemsDesc}</span></td>
+          <td class="text-center"><span class="badge ${ord.payment_method === 'CASH' ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-light text-dark border'}">${pmStr}</span></td>
+          <td class="text-end fw-bold text-slate-800">${formatMoney(totalAmt)} F</td>
+          <td class="text-center">
+            <button type="button" class="btn btn-outline-danger btn-sm p-1" onclick="deleteOfflineOrder(${ord.id})" title="Supprimer"><i class="fa-solid fa-trash"></i></button>
+          </td>
+        `;
+        tableBody.appendChild(tr);
+      });
+    }
+  }
+}
+
+// -------------------------------------------------------------
+// GESTION DU BANDEAU ET DES INDICATEURS HEADER
+// -------------------------------------------------------------
+async function updateNetworkIndicators() {
+  const pendingCount = await getPendingOfflineCount();
+  const btn = document.getElementById('networkStatusBtn');
+  const dot = document.getElementById('networkStatusDot');
+  const txt = document.getElementById('networkStatusText');
+  const badge = document.getElementById('networkPendingBadge');
   let banner = document.getElementById('pwa-network-banner');
+
   if (!banner) {
     banner = document.createElement('div');
     banner.id = 'pwa-network-banner';
@@ -194,50 +388,104 @@ async function updateOfflineBanner() {
     document.body.prepend(banner);
   }
 
-  if (window.PWA_DISABLED) {
-    if (!navigator.onLine) {
-      banner.style.backgroundColor = '#991b1b';
-      banner.style.color = '#ffffff';
-      banner.innerHTML = `<i class="fa-solid fa-lock me-2"></i>${window.PWA_DISABLED_MSG || 'Service web PWA non disponible. Veuillez contacter l\'opérateur d\'hébergement.'}`;
-      banner.style.display = 'block';
+  const forced = isForcedOffline();
+
+  // Mise à jour du bouton Header
+  if (btn && dot && txt) {
+    if (forced) {
+      btn.className = 'btn btn-sm btn-outline-warning text-dark fw-bold me-2 text-nowrap d-flex align-items-center gap-1.5 shadow-sm';
+      dot.style.backgroundColor = '#ea580c';
+      txt.textContent = 'Mode Hors-Ligne';
+    } else if (!navigator.onLine) {
+      btn.className = 'btn btn-sm btn-danger text-white fw-bold me-2 text-nowrap d-flex align-items-center gap-1.5 shadow-sm';
+      dot.style.backgroundColor = '#ffffff';
+      txt.textContent = 'Hors-Ligne';
     } else {
-      banner.style.display = 'none';
+      btn.className = 'btn btn-sm btn-light border fw-bold me-2 text-nowrap d-flex align-items-center gap-1.5 shadow-sm';
+      dot.style.backgroundColor = '#22c55e';
+      txt.textContent = 'En ligne';
     }
-    return;
+
+    if (badge) {
+      if (pendingCount > 0) {
+        badge.textContent = pendingCount + ' en attente';
+        badge.classList.remove('d-none');
+      } else {
+        badge.classList.add('d-none');
+      }
+    }
   }
 
-  const pendingCount = await getPendingOfflineCount();
+  // Mise à jour de la bannière supérieure
+  if (window.PWA_DISABLED) {
+    banner.style.display = 'none';
+    return;
+  }
 
   if (!navigator.onLine) {
     banner.style.backgroundColor = '#dc2626';
     banner.style.color = '#ffffff';
-    banner.innerHTML = `<i class="fa-solid fa-wifi-slash me-2"></i>MODE HORS-LIGNE ACTIVÉ — Vos ventes sont enregistrées localement. ${pendingCount > 0 ? `(${pendingCount} vente(s) en attente de synchro)` : ''}`;
+    banner.innerHTML = `<i class="fa-solid fa-wifi-slash me-2"></i>CONNEXION COUPÉE — Mode Hors-Ligne actif. Vos ventes sont enregistrées localement dans le navigateur. ${pendingCount > 0 ? `(${pendingCount} vente(s) en attente)` : ''} <button type="button" class="btn btn-sm btn-light py-0 px-2 ms-2 fw-bold" data-bs-toggle="modal" data-bs-target="#offlineSyncModal">Voir Cash & Synchro</button>`;
+    banner.style.display = 'block';
+  } else if (forced) {
+    banner.style.backgroundColor = '#ea580c';
+    banner.style.color = '#ffffff';
+    banner.innerHTML = `<i class="fa-solid fa-hand me-2"></i>MODE HORS-LIGNE FORCÉ ACTIF — Ventes enregistrées localement. ${pendingCount > 0 ? `(${pendingCount} vente(s) en attente)` : ''} <button type="button" class="btn btn-sm btn-light py-0 px-2 ms-2 fw-bold" onclick="handleForceOfflineToggle(false)">Repasser En Ligne</button> <button type="button" class="btn btn-sm btn-dark py-0 px-2 ms-1 fw-bold" data-bs-toggle="modal" data-bs-target="#offlineSyncModal">Voir Cash</button>`;
     banner.style.display = 'block';
   } else if (pendingCount > 0) {
     banner.style.backgroundColor = '#f59e0b';
     banner.style.color = '#000000';
-    banner.innerHTML = `<i class="fa-solid fa-arrows-rotate fa-spin me-2"></i>${pendingCount} vente(s) hors-ligne en attente de synchronisation. <button onclick="syncOfflineData()" class="btn btn-sm btn-dark py-0 px-2 ms-2">Synchroniser maintenant</button>`;
+    banner.innerHTML = `<i class="fa-solid fa-arrows-rotate fa-spin me-2"></i>${pendingCount} vente(s) hors-ligne en attente de synchronisation. <button onclick="triggerManualSync()" class="btn btn-sm btn-dark py-0 px-2 ms-2 fw-bold">Synchroniser maintenant</button> <button type="button" class="btn btn-sm btn-outline-dark py-0 px-2 ms-1 fw-bold" data-bs-toggle="modal" data-bs-target="#offlineSyncModal">Voir Détail Cash</button>`;
     banner.style.display = 'block';
   } else {
     banner.style.display = 'none';
   }
 }
 
-// Affichage de messages Toasts PWA
+// Notifications Toasts
 function showPwaToast(msg, type = 'info') {
   const toast = document.createElement('div');
   const bgClass = type === 'success' ? 'bg-success text-white' : (type === 'warning' ? 'bg-warning text-dark' : 'bg-primary text-white');
   toast.className = `alert ${bgClass} border-0 shadow-lg position-fixed bottom-0 end-0 m-3 p-3`;
-  toast.style.cssText = 'z-index: 10000; border-radius: 12px; max-width: 380px;';
+  toast.style.cssText = 'z-index: 10000; border-radius: 12px; max-width: 400px;';
   toast.innerHTML = `<div class="d-flex align-items-center justify-content-between"><div>${msg}</div><button type="button" class="btn-close ms-2" onclick="this.parentElement.parentElement.remove()"></button></div>`;
   document.body.appendChild(toast);
   setTimeout(() => { if (toast) toast.remove(); }, 5000);
 }
 
-// Initialisation au chargement du DOM
-document.addEventListener('DOMContentLoaded', () => {
-  updateOfflineBanner();
-  if (navigator.onLine && !window.PWA_DISABLED) {
+// -------------------------------------------------------------
+// ÉCOUTEURS D'ÉVÉNEMENTS RÉSEAU ET INITIALISATION
+// -------------------------------------------------------------
+window.addEventListener('online', () => {
+  updateNetworkIndicators();
+  renderOfflineModalData();
+  if (!window.PWA_DISABLED && !isForcedOffline()) {
+    showPwaToast('🌐 Connexion rétablie ! Lancement de la synchronisation automatique...', 'info');
     syncOfflineData();
+  }
+});
+
+window.addEventListener('offline', () => {
+  updateNetworkIndicators();
+  renderOfflineModalData();
+  if (window.PWA_DISABLED) {
+    showPwaToast('⚠️ ' + (window.PWA_DISABLED_MSG || 'Service web non disponible.'), 'warning');
+  } else {
+    showPwaToast('🔴 Vous êtes actuellement Hors-Ligne. Les nouvelles ventes seront enregistrées localement.', 'warning');
+  }
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  updateNetworkIndicators();
+  if (navigator.onLine && !window.PWA_DISABLED && !isForcedOffline()) {
+    syncOfflineData();
+  }
+
+  // Écouteur pour rafraîchir le modal lors de son ouverture
+  const modalEl = document.getElementById('offlineSyncModal');
+  if (modalEl) {
+    modalEl.addEventListener('show.bs.modal', () => {
+      renderOfflineModalData();
+    });
   }
 });

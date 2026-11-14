@@ -229,6 +229,13 @@ $total_notifications_count = $total_debt_alerts + $unread_transfers_count;
                     </div>
                 <?php endif; ?>
 
+                <!-- Indicateur Réseau & Centre Hors-Ligne -->
+                <button type="button" class="btn btn-sm btn-light border fw-bold me-2 text-nowrap d-flex align-items-center gap-1.5 shadow-sm" id="networkStatusBtn" data-bs-toggle="modal" data-bs-target="#offlineSyncModal" style="border-radius: 8px; padding: 0.35rem 0.65rem;" title="Centre Hors-Ligne & Synchronisation">
+                    <span id="networkStatusDot" style="width: 9px; height: 9px; border-radius: 50%; background-color: #22c55e; display: inline-block;"></span>
+                    <span id="networkStatusText" style="font-size: 0.8rem;">En ligne</span>
+                    <span class="badge bg-warning text-dark d-none ms-1" id="networkPendingBadge" style="font-size: 0.7rem; border-radius: 10px;">0</span>
+                </button>
+
                 <!-- Bouton Installer l'application PWA -->
                 <button type="button" class="btn btn-sm btn-outline-primary fw-bold me-3 text-nowrap" id="pwaInstallBtn" onclick="handlePwaInstallClick()" style="border-radius: 8px;" title="Installer l'application sur cet appareil">
                     <i class="fa-solid fa-download me-1 text-primary"></i>Installer l'App

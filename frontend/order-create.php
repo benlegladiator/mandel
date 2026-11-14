@@ -717,8 +717,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Soumission du formulaire (Online direct ou Hors-Ligne via IndexedDB)
     if (orderForm) {
         orderForm.addEventListener('submit', async function(e) {
-            // Si l'appareil est hors-ligne et que le service PWA est actif
-            if (!navigator.onLine && typeof saveOfflineOrder === 'function' && !window.PWA_DISABLED) {
+            // Si l'appareil est hors-ligne (coupure réseau ou mode forcé) et que le service PWA est actif
+            const isOffline = (!navigator.onLine || (typeof isForcedOffline === 'function' && isForcedOffline()));
+            if (isOffline && typeof saveOfflineOrder === 'function' && !window.PWA_DISABLED) {
                 e.preventDefault();
 
                 const productSelects = tableBody.querySelectorAll('.product-select');
