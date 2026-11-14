@@ -47,17 +47,42 @@ try {
         $total_amount = max(0, $subtotal - $discount);
         $amount_paid = ($payment_method === 'CREDIT') ? 0 : $total_amount;
         $payment_status = ($payment_method === 'CREDIT') ? 'UNPAID' : 'PAID';
+        $due_date = ($payment_method === 'CREDIT') ? date('Y-m-d', strtotime('+7 days')) : null;
+        $discount_reason = ($discount > 0) ? ("Remise accordée: " . number_format($discount, 0, '.', ' ') . " FCFA") : null;
+        $saved_at = !empty($data['saved_at']) ? date('Y-m-d H:i:s', strtotime($data['saved_at'])) : date('Y-m-d H:i:s');
 
-        // Insérer la commande
+        // Insérer la commande avec les colonnes exactes de la base de données
         $stmt_order = $pdo->prepare("
-            INSERT INTO orders (shop_id, user_id, type, client_id, supplier_id, payment_method, total_amount, subtotal, discount, amount_paid, payment_status, notes, status) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'COMPLETED')
+            INSERT INTO orders (
+                type, shop_id, client_id, supplier_id, user_id, 
+                total_amount, payment_method, notes, status, due_date, 
+                amount_paid, payment_status, discount_reason,
+                is_formal, subtotal, tax_amount, ir_amount, nap_amount,
+                created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'COMPLETED', ?, ?, ?, ?, 0, ?, 0, 0, ?, ?)
         ");
         $stmt_order->execute([
-            $shop_id, $user_id, $order_type, $client_id, $supplier_id, $payment_method, $total_amount, $subtotal, $discount, $amount_paid, $payment_status, $notes
+            $order_type,
+            $shop_id,
+            $client_id,
+            $supplier_id,
+            $user_id,
+            $total_amount,
+            $payment_method,
+            $notes,
+            $due_date,
+            $amount_paid,
+            $payment_status,
+            $discount_reason,
+            $subtotal,
+            $total_amount,
+            $saved_at
         ]);
         $order_id = $pdo->lastInsertId();
-        $ref_code = 'FA' . sprintf("%05d", $order_id);
+        $ref_code = 'FAC-' . sprintf("%05d", $order_id);
+
+        // Mettre à jour la référence formatée
+        $pdo->prepare("UPDATE orders SET reference = ? WHERE id = ?")->execute([$ref_code, $order_id]);
 
         // Insérer les items et mettre à jour le stock
         $stmt_item = $pdo->prepare("
@@ -66,7 +91,9 @@ try {
         ");
 
         $stmt_stock_deduct = $pdo->prepare("
-            UPDATE product_stock SET quantity = quantity - ? WHERE product_id = ? AND shop_id = ?
+            INSERT INTO product_stock (product_id, shop_id, quantity) 
+            VALUES (?, ?, ?) 
+            ON DUPLICATE KEY UPDATE quantity = quantity - ?
         ");
 
         $stmt_stock_add = $pdo->prepare("
@@ -84,21 +111,21 @@ try {
             $stmt_item->execute([$order_id, $p_id, $qty, $price, $line_total]);
 
             if ($order_type === 'SALE') {
-                $stmt_stock_deduct->execute([$qty, $p_id, $shop_id]);
+                $stmt_stock_deduct->execute([$p_id, $shop_id, -$qty, $qty]);
             } else {
                 $stmt_stock_add->execute([$p_id, $shop_id, $qty, $qty]);
             }
         }
 
         // Insérer la transaction de caisse si payé en cash/om/cb
-        if ($amount_paid > 0) {
+        if ($amount_paid > 0 && in_array($payment_method, ['CASH', 'MOBILE_MONEY'])) {
             $stmt_cash = $pdo->prepare("
-                INSERT INTO cash_transactions (shop_id, user_id, type, amount, description, reference_id, reference_type) 
-                VALUES (?, ?, ?, ?, ?, ?, 'ORDER')
+                INSERT INTO cash_transactions (shop_id, user_id, type, amount, description, reference_id, reference_type, created_at) 
+                VALUES (?, ?, ?, ?, ?, ?, 'ORDER', ?)
             ");
             $cash_type = ($order_type === 'SALE') ? 'IN' : 'OUT';
             $cash_desc = ($order_type === 'SALE' ? 'Vente Synchro ' : 'Achat Synchro ') . $ref_code;
-            $stmt_cash->execute([$shop_id, $user_id, $cash_type, $amount_paid, $cash_desc, $order_id]);
+            $stmt_cash->execute([$shop_id, $user_id, $cash_type, $amount_paid, $cash_desc, $order_id, $saved_at]);
         }
 
         $pdo->commit();
