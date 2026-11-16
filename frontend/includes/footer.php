@@ -405,6 +405,46 @@
             }
         });
     });
+
+    // ── Sonorisation Web Audio au Clic (Tap tactile 0 ko) ──
+    (function() {
+        let audioCtx = null;
+        function getAudioContext() {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (AudioContext) audioCtx = new AudioContext();
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            return audioCtx;
+        }
+
+        window.playMandelTapSound = function() {
+            try {
+                const ctx = getAudioContext();
+                if (!ctx) return;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(650, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(220, ctx.currentTime + 0.035);
+                gain.gain.setValueAtTime(0.12, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.035);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.035);
+            } catch(e) {}
+        };
+
+        document.addEventListener('click', function(e) {
+            const btn = e.target.closest('button, .btn, .mandel-bottom-nav a, .mandel-action-card-2, .nav-link, a.badge');
+            if (btn) {
+                playMandelTapSound();
+            }
+        }, true);
+    })();
     </script>
 
     <footer class="text-center py-4 text-secondary small no-print mt-5" style="margin-bottom: 70px;">
