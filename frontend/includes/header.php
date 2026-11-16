@@ -19,8 +19,9 @@ if (session_status() === PHP_SESSION_NONE) {
 // Connexion base de données
 require_once __DIR__ . '/../../backend/config/db.php';
 
-// Auto-reconnexion transparente via Cookie Persistant Mandel (90 jours)
-if (!isset($_SESSION['user_id']) && !empty($_COOKIE['mandel_remember'])) {
+// Auto-reconnexion transparente via Cookie Persistant Mandel (90 jours) - UNIQUEMENT SUR MOBILE
+$is_mobile_client = (bool) preg_match('/(android|iphone|ipad|ipod|mobile|phone|blackberry|opera mini|windows phone)/i', $_SERVER['HTTP_USER_AGENT'] ?? '');
+if ($is_mobile_client && !isset($_SESSION['user_id']) && !empty($_COOKIE['mandel_remember'])) {
     $cookie_parts = explode(':', $_COOKIE['mandel_remember'], 2);
     if (count($cookie_parts) === 2) {
         $c_uid   = intval($cookie_parts[0]);

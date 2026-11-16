@@ -81,16 +81,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['active_shop_id'] = $user['shop_id'] ?? 1;
             }
 
-            // Génération automatique du Cookie Persistant (90 jours) pour rester connecté en permanence
-            $remember_token = hash_hmac('sha256', $user['id'] . $user['password'], 'MANDEL_SECRET_KEY_2026');
-            $cookie_value = $user['id'] . ':' . $remember_token;
-            setcookie('mandel_remember', $cookie_value, [
-                'expires'  => time() + (86400 * 90),
-                'path'     => '/',
-                'httponly' => true,
-                'samesite' => 'Lax',
-                'secure'   => (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on')
-            ]);
+            // Persistance de connexion UNIQUEMENT sur smartphone / tablette (PC partagé reste sans persistance)
+            $is_mobile = preg_match('/(android|iphone|ipad|ipod|mobile|phone|blackberry|opera mini|windows phone)/i', $_SERVER['HTTP_USER_AGENT'] ?? '');
+            if ($is_mobile) {
+                $remember_token = hash_hmac('sha256', $user['id'] . $user['password'], 'MANDEL_SECRET_KEY_2026');
+                $cookie_value = $user['id'] . ':' . $remember_token;
+                setcookie('mandel_remember', $cookie_value, [
+                    'expires'  => time() + (86400 * 90),
+                    'path'     => '/',
+                    'httponly' => true,
+                    'samesite' => 'Lax',
+                    'secure'   => (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on')
+                ]);
+            }
 
             header("Location: index.php");
             exit;
