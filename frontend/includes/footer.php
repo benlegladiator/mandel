@@ -406,44 +406,92 @@
         });
     });
 
-    // ── Sonorisation Web Audio au Clic (Tap tactile 0 ko) ──
+    // ── Son Tactile au Clic Mandel (Web Audio + Fallback Instantané) ──
     (function() {
         let audioCtx = null;
-        function getAudioContext() {
-            if (!audioCtx) {
-                const AudioContext = window.AudioContext || window.webkitAudioContext;
-                if (AudioContext) audioCtx = new AudioContext();
-            }
-            if (audioCtx && audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
-            return audioCtx;
+        const b64Click = "data:audio/wav;base64,UklGRgQCAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YeABAACA1PbTgjEOLHjH7tiSRBckYq7h4K1kKh1DhsbhzJFPJilXlsvbwIdNKzBalMTVwI5YNDFRg7TOx6JxRjRBaJa8yrqTZ0Q5SW2XucS3lm5NPkdkiau+u6SBYElEU3CRrbq0n4BiTklUbImks7SmjXJbTk9edY6ksK+ijXVgVFJcboOYp6ynmYZyYVdXX26AkqCop56Pf25hW1tjcH+Om6Kkn5WHemxjXl9mcH2JlJygn5mQhXpvZ2NiZm12gIqTmZybmJGJgHhwamdmaG1ze4KJkJWYmJaTjYeAenRvbGpqbG9zeH6DiI2Qk5SUk5CNiYSAfHh0cW9ubm5wcnV4fH+ChYiLjY+QkJCPjo2LiIaDgX99enh3dXRzcnJycnN0dXZ3eHp7fX6AgIKDhIWHh4iJioqKi4uLi4uLi4uKioqKiYmJiIiHh4eGhoaGhYWFhYSEhISEhISEg4ODg4SEhISEhISEhIWFhYWFhYaGhoaGhoeHh4eHh4eHh4aGhoaFhYWEhIOCgoGAgIB/f359fXx8e3t7e3t7e3t8fH1+f3+AgIGCg4OEhISFhISEg4OCgYCAf359fXx8fHx9fX5/gICBgoKDg4SDg4KCgYCAf359fX19fX5/gICBgoKDg4OCgYE=";
+        let fallbackAudio = null;
+
+        function unlockAudio() {
+            try {
+                if (!audioCtx) {
+                    const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+                    if (AudioCtxClass) audioCtx = new AudioCtxClass();
+                }
+                if (audioCtx && audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+            } catch(e) {}
         }
+
+        ['touchstart', 'touchend', 'pointerdown', 'mousedown', 'click'].forEach(evt => {
+            document.addEventListener(evt, unlockAudio, { passive: true, once: true });
+        });
 
         window.playMandelTapSound = function() {
             try {
-                const ctx = getAudioContext();
-                if (!ctx) return;
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(650, ctx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(220, ctx.currentTime + 0.035);
-                gain.gain.setValueAtTime(0.12, ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.035);
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-                osc.start();
-                osc.stop(ctx.currentTime + 0.035);
+                unlockAudio();
+                if (audioCtx) {
+                    const playOsc = function() {
+                        try {
+                            const now = audioCtx.currentTime;
+                            const osc = audioCtx.createOscillator();
+                            const gain = audioCtx.createGain();
+
+                            osc.type = 'triangle';
+                            osc.frequency.setValueAtTime(880, now);
+                            osc.frequency.exponentialRampToValueAtTime(340, now + 0.055);
+
+                            gain.gain.setValueAtTime(0.4, now);
+                            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.055);
+
+                            osc.connect(gain);
+                            gain.connect(audioCtx.destination);
+
+                            osc.start(now);
+                            osc.stop(now + 0.06);
+                        } catch(err) {
+                            playFallback();
+                        }
+                    };
+
+                    if (audioCtx.state === 'suspended') {
+                        audioCtx.resume().then(playOsc).catch(() => playFallback());
+                    } else {
+                        playOsc();
+                    }
+                    return;
+                }
             } catch(e) {}
+
+            playFallback();
         };
 
-        document.addEventListener('click', function(e) {
-            const btn = e.target.closest('button, .btn, .mandel-bottom-nav a, .mandel-action-card-2, .nav-link, a.badge');
+        function playFallback() {
+            try {
+                if (!fallbackAudio) {
+                    fallbackAudio = new Audio(b64Click);
+                    fallbackAudio.volume = 0.6;
+                }
+                fallbackAudio.currentTime = 0;
+                fallbackAudio.play().catch(() => {});
+            } catch(e) {}
+        }
+
+        let lastSoundTime = 0;
+        function handleSoundTrigger(e) {
+            const now = Date.now();
+            if (now - lastSoundTime < 80) return;
+
+            const btn = e.target.closest('button, .btn, .mandel-bottom-nav a, .mandel-action-card-2, .nav-link, a.badge, a[href]');
             if (btn) {
+                lastSoundTime = now;
                 playMandelTapSound();
             }
-        }, true);
+        }
+
+        document.addEventListener('pointerdown', handleSoundTrigger, { passive: true });
+        document.addEventListener('click', handleSoundTrigger, true);
     })();
     </script>
 
