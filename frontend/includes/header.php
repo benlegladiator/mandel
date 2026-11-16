@@ -1,11 +1,51 @@
 <?php
 ob_start();
+
+// Configuration de la durée de session (30 jours de persistance)
 if (session_status() === PHP_SESSION_NONE) {
+    ini_set('session.cookie_lifetime', 2592000);
+    ini_set('session.gc_maxlifetime', 2592000);
+    if (!headers_sent()) {
+        session_set_cookie_params([
+            'lifetime' => 2592000,
+            'path'     => '/',
+            'httponly' => true,
+            'samesite' => 'Lax'
+        ]);
+    }
     session_start();
 }
 
 // Connexion base de données
 require_once __DIR__ . '/../../backend/config/db.php';
+
+// Auto-reconnexion transparente via Cookie Persistant Mandel (90 jours)
+if (!isset($_SESSION['user_id']) && !empty($_COOKIE['mandel_remember'])) {
+    $cookie_parts = explode(':', $_COOKIE['mandel_remember'], 2);
+    if (count($cookie_parts) === 2) {
+        $c_uid   = intval($cookie_parts[0]);
+        $c_token = $cookie_parts[1];
+        if ($c_uid > 0 && $pdo) {
+            try {
+                $stmt_auto = $pdo->prepare("SELECT * FROM users WHERE id = ? AND status = 'active' LIMIT 1");
+                $stmt_auto->execute([$c_uid]);
+                $auto_user = $stmt_auto->fetch();
+                if ($auto_user) {
+                    $expected_token = hash_hmac('sha256', $auto_user['id'] . $auto_user['password'], 'MANDEL_SECRET_KEY_2026');
+                    if (hash_equals($expected_token, $c_token)) {
+                        session_regenerate_id(true);
+                        $_SESSION['user_id']        = $auto_user['id'];
+                        $_SESSION['user_name']      = $auto_user['name'];
+                        $_SESSION['user_role']      = $auto_user['role'];
+                        $_SESSION['username']       = $auto_user['username'];
+                        $_SESSION['user_shop_id']   = $auto_user['shop_id'];
+                        $_SESSION['active_shop_id'] = ($auto_user['role'] === 'admin') ? 0 : ($auto_user['shop_id'] ?? 1);
+                    }
+                }
+            } catch (Throwable $e) {}
+        }
+    }
+}
 
 // Auto-migration ultra-sécurisée des colonnes de transferts (transfer_code & status)
 try {
