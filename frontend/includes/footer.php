@@ -407,9 +407,43 @@
     });
     </script>
 
-    <footer class="text-center py-4 text-secondary small no-print mt-5">
+    <footer class="text-center py-4 text-secondary small no-print mt-5" style="margin-bottom: 70px;">
         <hr class="w-50 mx-auto opacity-25">
         &copy; <?= date('Y') ?> Mandel Papeterie - Gestion de Stock & Facturation Multi-boutiques.
     </footer>
+
+    <?php if (isset($_SESSION['user_id'])): 
+        $req_uri = $_SERVER['REQUEST_URI'] ?? '';
+        $cur_script = basename($_SERVER['PHP_SELF'] ?? '');
+        $is_act_home    = ($cur_script === 'index.php');
+        $is_act_vente   = (strpos($req_uri, 'order-create.php') !== false);
+        $is_act_stock   = (strpos($req_uri, 'products.php') !== false || strpos($req_uri, 'product-') !== false || strpos($req_uri, 'stats-stock.php') !== false);
+        $is_act_caisse  = (strpos($req_uri, 'caisse.php') !== false || strpos($req_uri, 'finance.php') !== false);
+        $is_act_journal = (strpos($req_uri, 'orders.php') !== false && strpos($req_uri, 'order-create.php') === false);
+    ?>
+    <!-- Navigation Basse Fixe Permanente Mobile Ets MANDEL (Fond Clair & Épuré) -->
+    <nav class="mandel-bottom-nav no-print" id="mandelBottomNav">
+        <a href="index.php" class="<?= $is_act_home ? 'active' : '' ?>">
+            <span class="nav-icon">🏠</span>
+            <span>Accueil</span>
+        </a>
+        <a href="order-create.php?type=SALE" class="<?= $is_act_vente ? 'active' : '' ?>">
+            <span class="nav-icon">🛒</span>
+            <span>Vente</span>
+        </a>
+        <a href="products.php" class="<?= $is_act_stock ? 'active' : '' ?>">
+            <span class="nav-icon">📦</span>
+            <span>Stock</span>
+        </a>
+        <a href="caisse.php" class="<?= $is_act_caisse ? 'active' : '' ?>">
+            <span class="nav-icon">💰</span>
+            <span>Caisse</span>
+        </a>
+        <a href="orders.php" class="<?= $is_act_journal ? 'active' : '' ?>">
+            <span class="nav-icon">📋</span>
+            <span>Journal</span>
+        </a>
+    </nav>
+    <?php endif; ?>
 </body>
 </html>

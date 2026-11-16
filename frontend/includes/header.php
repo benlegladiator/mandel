@@ -110,9 +110,10 @@ if ($_SESSION['active_shop_id'] == 0) {
         ?>
         <link rel="manifest" href="<?= $manifest_url ?>" crossorigin="anonymous">
         <meta name="theme-color" content="#059669">
+        <meta name="mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-        <meta name="apple-mobile-web-app-title" content="Mandel">
+        <meta name="apple-mobile-web-app-title" content="Ets MANDEL">
         <script src="assets/js/pwa-offline-sync.js?v=<?= file_exists(__DIR__ . '/../assets/js/pwa-offline-sync.js') ? filemtime(__DIR__ . '/../assets/js/pwa-offline-sync.js') : time() ?>"></script>
     <?php else: ?>
         <script>
