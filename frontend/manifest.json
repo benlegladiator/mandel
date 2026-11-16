@@ -1,7 +1,7 @@
 {
   "id": "https://mandel.free.nf/frontend/index.php",
-  "name": "Mandel Papeterie - Gestion de Stock & Ventes",
-  "short_name": "Mandel",
+  "name": "Ets MANDEL",
+  "short_name": "Ets MANDEL",
   "description": "Application de gestion de stock, facturation et caisse multi-boutiques Mandel Papeterie.",
   "lang": "fr",
   "start_url": "https://mandel.free.nf/frontend/index.php",
