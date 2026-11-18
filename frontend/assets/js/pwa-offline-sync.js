@@ -46,15 +46,16 @@ function showAutoInstallPrompt() {
     card.id = 'mandelAutoInstallPrompt';
     card.style.cssText = `
       position: fixed;
-      bottom: 24px;
-      right: 24px;
-      width: calc(100% - 48px);
-      max-width: 420px;
+      bottom: calc(75px + env(safe-area-inset-bottom, 0px));
+      right: 16px;
+      left: 16px;
+      margin: 0 auto;
+      max-width: 440px;
       background: #ffffff;
       border-radius: 16px;
-      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.18), 0 2px 8px rgba(0,0,0,0.06);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.22), 0 2px 8px rgba(0,0,0,0.08);
       border: 1px solid #e2e8f0;
-      z-index: 10500;
+      z-index: 1000005;
       padding: 18px 20px;
       font-family: inherit;
       animation: mandelSlideUp 0.35s ease-out;
@@ -690,8 +691,8 @@ async function updateNetworkIndicators() {
 function showPwaToast(msg, type = 'info') {
   const toast = document.createElement('div');
   const bgClass = type === 'success' ? 'bg-success text-white' : (type === 'warning' ? 'bg-warning text-dark' : 'bg-primary text-white');
-  toast.className = `alert ${bgClass} border-0 shadow-lg position-fixed bottom-0 end-0 m-3 p-3`;
-  toast.style.cssText = 'z-index: 10600; border-radius: 12px; max-width: 420px;';
+  toast.className = `alert ${bgClass} border-0 shadow-lg position-fixed end-0 m-3 p-3`;
+  toast.style.cssText = 'bottom: calc(75px + env(safe-area-inset-bottom, 0px)); z-index: 1000010; border-radius: 12px; max-width: 420px;';
   toast.innerHTML = `<div class="d-flex align-items-center justify-content-between"><div>${msg}</div><button type="button" class="btn-close ms-2" onclick="this.parentElement.parentElement.remove()"></button></div>`;
   document.body.appendChild(toast);
   setTimeout(() => { if (toast) toast.remove(); }, 6000);
