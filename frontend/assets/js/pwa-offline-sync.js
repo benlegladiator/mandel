@@ -237,7 +237,7 @@ function handleForceOfflineToggle(enabled) {
 // GESTION D'INDEXEDDB (STOCKAGE LOCAL HORS-LIGNE)
 // -------------------------------------------------------------
 const DB_NAME = 'MandelOfflineDB';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 function openOfflineDB() {
   return new Promise((resolve, reject) => {
@@ -246,6 +246,9 @@ function openOfflineDB() {
       const db = event.target.result;
       if (!db.objectStoreNames.contains('offline_orders')) {
         db.createObjectStore('offline_orders', { keyPath: 'id', autoIncrement: true });
+      }
+      if (!db.objectStoreNames.contains('offline_deleted_logs')) {
+        db.createObjectStore('offline_deleted_logs', { keyPath: 'id', autoIncrement: true });
       }
     };
     request.onsuccess = (event) => resolve(event.target.result);
@@ -317,24 +320,112 @@ async function getPendingOfflineCount() {
   }
 }
 
-// Supprimer une commande hors-ligne après synchronisation
-async function deleteOfflineOrder(id) {
+// Suppression silencieuse interne après synchronisation réussie au serveur
+async function removeOfflineOrderSilently(id) {
   try {
     const db = await openOfflineDB();
     const tx = db.transaction('offline_orders', 'readwrite');
     const store = tx.objectStore('offline_orders');
-    store.delete(id);
+    store.delete(parseInt(id));
     return new Promise((resolve) => {
-      tx.oncomplete = () => {
-        updateNetworkIndicators();
-        renderOfflineModalData();
-        resolve(true);
-      };
+      tx.oncomplete = () => resolve(true);
+      tx.onerror = () => resolve(false);
     });
+  } catch (err) {
+    return false;
+  }
+}
+
+// Supprimer une commande hors-ligne depuis l'interface avec confirmation et audit de sécurité
+async function deleteOfflineOrder(id) {
+  try {
+    const allOrders = await getOfflineOrders();
+    const ord = allOrders.find(o => o.id === parseInt(id));
+    if (!ord) {
+      alert("Commande hors-ligne introuvable.");
+      return false;
+    }
+
+    const amtStr = formatMoney(ord.total_amount || 0);
+    const refStr = ord.reference || ('FAC-' + id);
+    const clientStr = ord.client_name || (ord.client_id ? 'Client #' + ord.client_id : 'Client comptoir');
+    
+    const confirmMsg = `⚠️ ALERTE DE SÉCURITÉ - CONFIRMATION DE SUPPRESSION\n\n` +
+      `Êtes-vous sûr de vouloir supprimer cette transaction hors-ligne ?\n\n` +
+      `• Référence : ${refStr}\n` +
+      `• Montant : ${amtStr} FCFA\n` +
+      `• Client / Tiers : ${clientStr}\n\n` +
+      `ATTENTION : Cette action est automatiquement consignée dans le journal d'audit et sera notifiée à l'administrateur dès le retour de la connexion Internet.`;
+    
+    if (!confirm(confirmMsg)) {
+      return false;
+    }
+
+    // Sauvegarde de l'audit de suppression
+    const db = await openOfflineDB();
+    let itemsDesc = '';
+    if (ord.items && Array.isArray(ord.items)) {
+      itemsDesc = ord.items.map(it => `${it.quantity}x ${it.product_name}`).join(', ');
+    }
+    
+    const deleteAuditRecord = {
+      reference: refStr,
+      order_type: ord.order_type || 'SALE',
+      shop_id: ord.shop_id || null,
+      user_id: ord.user_id || null,
+      user_name: ord.user_name || 'Utilisateur',
+      client_name: clientStr,
+      total_amount: ord.total_amount || 0,
+      items_summary: itemsDesc,
+      payment_method: ord.payment_method || 'CASH',
+      reason: 'Suppression manuelle locale par caissière',
+      created_locally_at: ord.saved_at || new Date().toISOString(),
+      deleted_locally_at: new Date().toISOString()
+    };
+
+    if (db.objectStoreNames.contains('offline_deleted_logs')) {
+      const txAudit = db.transaction('offline_deleted_logs', 'readwrite');
+      txAudit.objectStore('offline_deleted_logs').add(deleteAuditRecord);
+    }
+
+    // Retrait de la file d'attente
+    await removeOfflineOrderSilently(id);
+
+    await updateNetworkIndicators();
+    await renderOfflineModalData();
+    showPwaToast(`⚠️ Transaction ${refStr} supprimée. Un rapport de sécurité a été généré pour l'admin.`, 'warning');
+    return true;
   } catch (err) {
     console.error('[OfflineDB] Erreur suppression:', err);
     return false;
   }
+}
+
+// Récupérer le journal d'audit local des suppressions
+function getOfflineDeletedLogs() {
+  return new Promise(async (resolve) => {
+    try {
+      const db = await openOfflineDB();
+      if (!db.objectStoreNames.contains('offline_deleted_logs')) return resolve([]);
+      const tx = db.transaction('offline_deleted_logs', 'readonly');
+      const store = tx.objectStore('offline_deleted_logs');
+      const req = store.getAll();
+      req.onsuccess = () => resolve(req.result || []);
+      req.onerror = () => resolve([]);
+    } catch (e) {
+      resolve([]);
+    }
+  });
+}
+
+// Vider le journal local d'audit après synchronisation réussie au serveur
+async function clearOfflineDeletedLogs() {
+  try {
+    const db = await openOfflineDB();
+    if (!db.objectStoreNames.contains('offline_deleted_logs')) return;
+    const tx = db.transaction('offline_deleted_logs', 'readwrite');
+    tx.objectStore('offline_deleted_logs').clear();
+  } catch (e) {}
 }
 
 // Vider toutes les commandes hors-ligne
@@ -387,7 +478,8 @@ async function syncOfflineData() {
   if (isSyncing) return;
 
   const orders = await getOfflineOrders();
-  if (orders.length === 0) {
+  const deletedLogs = await getOfflineDeletedLogs();
+  if (orders.length === 0 && deletedLogs.length === 0) {
     return;
   }
 
@@ -397,14 +489,17 @@ async function syncOfflineData() {
   if (syncBtn) syncBtn.disabled = true;
   if (syncIcon) syncIcon.classList.add('fa-spin');
 
-  showPwaToast(`🔄 Synchronisation de ${orders.length} commande(s) hors-ligne en cours...`, 'info');
+  const syncLabel = orders.length > 0 
+    ? `🔄 Synchronisation de ${orders.length} commande(s) hors-ligne en cours...` 
+    : `🔄 Synchronisation du journal d'audit de sécurité...`;
+  showPwaToast(syncLabel, 'info');
 
   try {
     const apiUrl = getSyncApiUrl();
     const res = await fetch(apiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ orders: orders })
+      body: JSON.stringify({ orders: orders, deleted_logs: deletedLogs })
     });
 
     if (!res.ok) {
@@ -415,12 +510,20 @@ async function syncOfflineData() {
     if (data && data.success) {
       if (Array.isArray(data.synced_ids) && data.synced_ids.length > 0) {
         for (const sid of data.synced_ids) {
-          await deleteOfflineOrder(sid);
+          await removeOfflineOrderSilently(sid);
         }
-      } else {
+      } else if (orders.length > 0) {
         await clearAllOfflineOrders();
       }
-      showPwaToast(`✅ Synchronisation réussie ! ${data.synced_count || orders.length} vente(s) enregistrée(s) au serveur central.`, 'success');
+      
+      if (deletedLogs.length > 0) {
+        await clearOfflineDeletedLogs();
+      }
+
+      const msg = orders.length > 0 
+        ? `✅ Synchronisation réussie ! ${data.synced_count || orders.length} vente(s) enregistrée(s) au serveur central.` 
+        : `✅ Journal d'audit de sécurité synchronisé avec le serveur central.`;
+      showPwaToast(msg, 'success');
       await updateNetworkIndicators();
       await renderOfflineModalData();
     } else {
@@ -754,11 +857,90 @@ window.updateOfflineBanner = updateNetworkIndicators;
 // GESTION DE L'IMPRESSION DES FACTURES HORS-LIGNE
 // -------------------------------------------------------------
 function printOfflineInvoiceModal() {
-  document.body.classList.add('printing-offline-invoice');
-  window.print();
+  const printContent = document.getElementById('offlineInvoicePrintArea');
+  if (!printContent) {
+    window.print();
+    return;
+  }
+
+  // Créer ou réutiliser un iframe caché dédié pour une impression isolée fiable (Desktop & Mobile)
+  let iframe = document.getElementById('offlinePrintIframe');
+  if (!iframe) {
+    iframe = document.createElement('iframe');
+    iframe.id = 'offlinePrintIframe';
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    iframe.style.visibility = 'hidden';
+    document.body.appendChild(iframe);
+  }
+
+  const doc = iframe.contentWindow.document;
+  doc.open();
+  doc.write(`
+    <!DOCTYPE html>
+    <html lang="fr">
+    <head>
+      <meta charset="UTF-8">
+      <title>Ticket Mandel</title>
+      <style>
+        @page {
+          size: 80mm auto;
+          margin: 3mm;
+        }
+        body {
+          margin: 0;
+          padding: 6px;
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+          font-size: 11px;
+          color: #000;
+          line-height: 1.35;
+          background: #fff;
+        }
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          font-size: 11px;
+        }
+        .text-center { text-align: center; }
+        .text-start { text-align: left; }
+        .text-end { text-align: right; }
+        .fw-bold { font-weight: bold; }
+        .fw-semibold { font-weight: 600; }
+        .fw-extrabold { font-weight: 800; }
+        .d-flex { display: flex; }
+        .justify-content-between { justify-content: space-between; }
+        .mb-1 { margin-bottom: 4px; }
+        .mb-2 { margin-bottom: 8px; }
+        .mb-3 { margin-bottom: 12px; }
+        .mt-1 { margin-top: 4px; }
+        .mt-2 { margin-top: 8px; }
+        .py-1 { padding-top: 4px; padding-bottom: 4px; }
+        .pt-1 { padding-top: 4px; }
+        .d-none { display: none !important; }
+        img { max-height: 44px; width: auto; object-fit: contain; }
+        hr { border: 0; border-top: 1px dashed #000; margin: 6px 0; }
+      </style>
+    </head>
+    <body>
+      ${printContent.innerHTML}
+    </body>
+    </html>
+  `);
+  doc.close();
+
   setTimeout(() => {
-    document.body.classList.remove('printing-offline-invoice');
-  }, 1000);
+    try {
+      iframe.contentWindow.focus();
+      iframe.contentWindow.print();
+    } catch (e) {
+      document.body.classList.add('printing-offline-invoice');
+      window.print();
+    }
+  }, 250);
 }
 
 async function printOfflineInvoice(orderInput) {

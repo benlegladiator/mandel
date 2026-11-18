@@ -172,7 +172,7 @@ $whatsapp_text = "📝 *Ets MANDEL* - *Facture FAC-" . sprintf("%05d", $order['i
 $whatsapp_text .= "----------------------------------------\n";
 $whatsapp_text .= "Boutique: " . $order['shop_name'] . "\n";
 $whatsapp_text .= "Date: " . date('d/m/Y H:i', strtotime($order['created_at'])) . "\n";
-$whatsapp_text .= "Client: " . ($order['client_name'] ?? 'Client inconnu') . "\n";
+$whatsapp_text .= "Client: " . ($order['client_name'] ?: 'Client comptoir') . "\n";
 $whatsapp_text .= "Paiement: " . ($order['payment_method'] === 'CREDIT' ? 'CRÉDIT' : $order['payment_method']) . "\n";
 $whatsapp_text .= "----------------------------------------\n";
 $whatsapp_text .= "*Produits :*\n";
@@ -461,7 +461,7 @@ $whatsapp_text .= "Merci pour votre confiance !";
             
             <?php if ($order['type'] === 'SALE'): ?>
                 <div class="mt-2 border-top pt-2">
-                    <strong>Client :</strong> <?= htmlspecialchars($order['client_name'] ?? 'Client inconnu') ?><br>
+                    <strong>Client :</strong> <?= htmlspecialchars($order['client_name'] ?: 'Client comptoir') ?><br>
                     <?php if ($order['client_phone']): ?>
                         <strong>Tél :</strong> <?= htmlspecialchars($order['client_phone']) ?><br>
                     <?php endif; ?>
@@ -474,7 +474,7 @@ $whatsapp_text .= "Merci pour votre confiance !";
                 </div>
             <?php else: ?>
                 <div class="mt-2 border-top pt-2">
-                    <strong>Fournisseur :</strong> <?= htmlspecialchars($order['supplier_name'] ?? 'Fournisseur inconnu') ?><br>
+                    <strong>Fournisseur :</strong> <?= htmlspecialchars($order['supplier_name'] ?: 'Fournisseur direct') ?><br>
                     <?php if ($order['supplier_phone']): ?>
                         <strong>Tél :</strong> <?= htmlspecialchars($order['supplier_phone']) ?>
                     <?php endif; ?>

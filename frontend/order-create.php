@@ -860,7 +860,27 @@ document.addEventListener('DOMContentLoaded', function() {
                 const dueDateInput = document.getElementById('due_date');
 
                 const contactOpt = contactSelect && contactSelect.selectedOptions ? contactSelect.selectedOptions[0] : null;
-                const contactName = contactOpt && contactOpt.value ? contactOpt.textContent.trim() : (isPurchase ? 'Fournisseur direct' : 'Client comptoir');
+                const newContactCheckbox = document.getElementById('new_contact_checkbox');
+                const newContactNameInput = document.getElementById('new_contact_name');
+                const newContactPhoneInput = document.getElementById('new_contact_phone');
+                const newContactAddressInput = document.getElementById('new_contact_address');
+
+                let finalContactName = '';
+                let finalContactId = null;
+
+                if (newContactCheckbox && newContactCheckbox.checked && newContactNameInput && newContactNameInput.value.trim()) {
+                    finalContactName = newContactNameInput.value.trim();
+                    finalContactId = null;
+                } else if (contactSelect && contactSelect.value && contactSelect.value !== 'NEW') {
+                    finalContactId = parseInt(contactSelect.value) || null;
+                    finalContactName = contactOpt ? contactOpt.textContent.trim() : (isPurchase ? 'Fournisseur direct' : 'Client comptoir');
+                } else {
+                    finalContactName = isPurchase ? 'Fournisseur direct' : 'Client comptoir';
+                    finalContactId = null;
+                }
+
+                const contactPhone = (newContactPhoneInput && newContactPhoneInput.value) ? newContactPhoneInput.value.trim() : '';
+                const contactAddress = (newContactAddressInput && newContactAddressInput.value) ? newContactAddressInput.value.trim() : '';
                 const shopOpt = shopSelect && shopSelect.selectedOptions ? shopSelect.selectedOptions[0] : null;
                 const shopName = shopOpt ? shopOpt.textContent.trim() : '<?= addslashes($current_shop["name"] ?? "Boutique Mandel") ?>';
                 const shopAddress = '<?= addslashes($current_shop["address"] ?? "Yaoundé, Cameroun") ?>';
@@ -875,10 +895,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     user_id: <?= intval($_SESSION['user_id'] ?? 1) ?>,
                     user_name: userName,
                     order_type: transactionType,
-                    client_id: !isPurchase ? (parseInt(contactSelect ? contactSelect.value : 0) || null) : null,
-                    client_name: !isPurchase ? contactName : null,
-                    supplier_id: isPurchase ? (parseInt(contactSelect ? contactSelect.value : 0) || null) : null,
-                    supplier_name: isPurchase ? contactName : null,
+                    client_id: !isPurchase ? finalContactId : null,
+                    client_name: !isPurchase ? finalContactName : null,
+                    client_phone: !isPurchase ? contactPhone : null,
+                    client_address: !isPurchase ? contactAddress : null,
+                    supplier_id: isPurchase ? finalContactId : null,
+                    supplier_name: isPurchase ? finalContactName : null,
+                    supplier_phone: isPurchase ? contactPhone : null,
                     payment_method: pmSelect ? pmSelect.value : 'CASH',
                     amount_paid: parseFloat(amountPaidInput ? amountPaidInput.value : 0) || 0,
                     due_date: (dueDateInput ? dueDateInput.value : null),

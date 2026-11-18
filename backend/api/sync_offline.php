@@ -44,9 +44,45 @@ try {
         throw new Exception("Payload de synchronisation non reconnu.");
     }
 
+    // Traitement du journal d'audit de sécurité des suppressions hors-ligne
+    $deleted_logs = [];
+    if (isset($payload['deleted_logs']) && is_array($payload['deleted_logs'])) {
+        $deleted_logs = $payload['deleted_logs'];
+    }
+    $synced_deleted_count = 0;
+    if (!empty($deleted_logs)) {
+        $stmt_del_log = $pdo->prepare("
+            INSERT INTO offline_deleted_logs (
+                reference, order_type, shop_id, user_id, user_name, client_name,
+                total_amount, items_summary, payment_method, reason,
+                created_locally_at, deleted_locally_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ");
+        foreach ($deleted_logs as $dlog) {
+            try {
+                $stmt_del_log->execute([
+                    $dlog['reference'] ?? 'SANS-REF',
+                    $dlog['order_type'] ?? 'SALE',
+                    intval($dlog['shop_id'] ?? 1),
+                    intval($dlog['user_id'] ?? 1),
+                    $dlog['user_name'] ?? 'Utilisateur',
+                    $dlog['client_name'] ?? 'Client comptoir',
+                    floatval($dlog['total_amount'] ?? 0),
+                    $dlog['items_summary'] ?? '',
+                    $dlog['payment_method'] ?? 'CASH',
+                    $dlog['reason'] ?? 'Supprimé par caissière',
+                    !empty($dlog['created_locally_at']) ? date('Y-m-d H:i:s', strtotime($dlog['created_locally_at'])) : date('Y-m-d H:i:s'),
+                    !empty($dlog['deleted_locally_at']) ? date('Y-m-d H:i:s', strtotime($dlog['deleted_locally_at'])) : date('Y-m-d H:i:s')
+                ]);
+                $synced_deleted_count++;
+            } catch (Exception $e_del) {}
+        }
+        $response['synced_deleted_count'] = $synced_deleted_count;
+    }
+
     if (empty($orders_to_sync)) {
         $response['success'] = true;
-        $response['message'] = "Aucune commande en attente de synchronisation.";
+        $response['message'] = $synced_deleted_count > 0 ? "Journal d'audit synchronisé avec succès." : "Aucune commande en attente de synchronisation.";
         echo json_encode($response);
         exit;
     }
@@ -119,6 +155,34 @@ try {
             $order_type = in_array($order['order_type'] ?? '', ['SALE', 'PURCHASE']) ? $order['order_type'] : 'SALE';
             $client_id = (!empty($order['client_id']) && intval($order['client_id']) > 0) ? intval($order['client_id']) : null;
             $supplier_id = (!empty($order['supplier_id']) && intval($order['supplier_id']) > 0) ? intval($order['supplier_id']) : null;
+
+            // Résolution automatique du client / fournisseur s'il a été saisi hors-ligne
+            if ($order_type === 'SALE' && !$client_id && !empty($order['client_name']) && trim($order['client_name']) !== 'Client comptoir') {
+                $c_name = trim($order['client_name']);
+                $stmt_find_c = $pdo->prepare("SELECT id FROM clients WHERE name = ? LIMIT 1");
+                $stmt_find_c->execute([$c_name]);
+                $found_c = $stmt_find_c->fetchColumn();
+                if ($found_c) {
+                    $client_id = intval($found_c);
+                } else {
+                    $stmt_new_c = $pdo->prepare("INSERT INTO clients (name, phone, address) VALUES (?, ?, ?)");
+                    $stmt_new_c->execute([$c_name, $order['client_phone'] ?? '', $order['client_address'] ?? '']);
+                    $client_id = intval($pdo->lastInsertId());
+                }
+            } elseif ($order_type === 'PURCHASE' && !$supplier_id && !empty($order['supplier_name']) && trim($order['supplier_name']) !== 'Fournisseur direct') {
+                $s_name = trim($order['supplier_name']);
+                $stmt_find_s = $pdo->prepare("SELECT id FROM suppliers WHERE name = ? LIMIT 1");
+                $stmt_find_s->execute([$s_name]);
+                $found_s = $stmt_find_s->fetchColumn();
+                if ($found_s) {
+                    $supplier_id = intval($found_s);
+                } else {
+                    $stmt_new_s = $pdo->prepare("INSERT INTO suppliers (name, phone, address) VALUES (?, ?, ?)");
+                    $stmt_new_s->execute([$s_name, $order['supplier_phone'] ?? '', $order['supplier_address'] ?? '']);
+                    $supplier_id = intval($pdo->lastInsertId());
+                }
+            }
+
             $payment_method = $order['payment_method'] ?? 'CASH';
             $discount = floatval($order['discount'] ?? 0);
             $notes = trim($order['notes'] ?? '');

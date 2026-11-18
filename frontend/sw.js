@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mandel-pwa-v8';
+const CACHE_NAME = 'mandel-pwa-v9';
 
 const ASSETS_TO_CACHE = [
   './index.php',

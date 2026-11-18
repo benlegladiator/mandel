@@ -813,10 +813,15 @@ h6 { font-size: 0.68rem; }
 
 /* Impression de la facture Hors-Ligne Mandel */
 @media print {
+    html, body {
+        overflow: visible !important;
+        height: auto !important;
+    }
     body.printing-offline-invoice {
         background: #ffffff !important;
         padding: 0 !important;
         margin: 0 !important;
+        overflow: visible !important;
     }
     body.printing-offline-invoice * {
         visibility: hidden !important;

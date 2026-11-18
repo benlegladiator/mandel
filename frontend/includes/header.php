@@ -194,9 +194,16 @@ if (isset($_SESSION['user_id'])) {
     
     $tr_shop_filter = ($_SESSION['user_role'] === 'admin' && $_SESSION['active_shop_id'] == 0) ? " WHERE status = 'PENDING'" : " WHERE to_shop_id = " . intval($_SESSION['active_shop_id']) . " AND status = 'PENDING'";
     $unread_transfers_count = intval($pdo->query("SELECT COUNT(DISTINCT transfer_code) FROM stock_transfers" . $tr_shop_filter)->fetchColumn() ?: 0);
+
+    $unread_deleted_offline = 0;
+    if ($_SESSION['user_role'] === 'admin') {
+        try {
+            $unread_deleted_offline = intval($pdo->query("SELECT COUNT(*) FROM offline_deleted_logs WHERE is_read = 0")->fetchColumn() ?: 0);
+        } catch (Exception $e_del) {}
+    }
 }
 $total_debt_alerts = $overdue_clients + $overdue_suppliers;
-$total_notifications_count = $total_debt_alerts + $unread_transfers_count;
+$total_notifications_count = $total_debt_alerts + $unread_transfers_count + $unread_deleted_offline;
 
 ?>
     <!-- Navbar simplifiée et épurée -->
@@ -305,6 +312,14 @@ $total_notifications_count = $total_debt_alerts + $unread_transfers_count;
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 mt-2" aria-labelledby="alertsDropdown" style="border-radius: 12px; min-width: 280px;">
                             <li><h6 class="dropdown-header fw-bold text-dark">Notifications & Alertes</h6></li>
+                            <?php if ($unread_deleted_offline > 0 && $_SESSION['user_role'] === 'admin'): ?>
+                                <li>
+                                    <a class="dropdown-item py-2 fw-semibold text-danger bg-danger bg-opacity-10 border-start border-danger border-3" href="caisse.php?view_security=1">
+                                        <i class="fa-solid fa-triangle-exclamation text-danger me-2"></i>
+                                        <span><strong><?= $unread_deleted_offline ?> suppression(s) hors-ligne</strong> suspecte(s) !</span>
+                                    </a>
+                                </li>
+                            <?php endif; ?>
                             <?php if ($unread_transfers_count > 0): ?>
                                 <li><a class="dropdown-item py-2 fw-semibold" href="stock-transfers.php"><i class="fa-solid fa-truck-fast text-primary me-2"></i><span class="text-primary"><?= $unread_transfers_count ?> Transfert(s) reçu(s) à consulter</span></a></li>
                             <?php endif; ?>

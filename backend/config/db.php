@@ -63,7 +63,7 @@ try {
     $pdo->exec("SET time_zone = '+01:00'");
 
     // Système d'auto-migration ultra-rapide avec verrou de version pour performances maximales (Pilier 1)
-    define('APP_SCHEMA_VERSION', 21);
+    define('APP_SCHEMA_VERSION', 22);
 
     $current_installed_version = 0;
     try {
@@ -438,6 +438,31 @@ try {
             WHERE reference_type = 'ORDER' 
               AND type = 'OUT' 
               AND shop_id IS NULL
+        ");
+    } catch (Exception $e) {}
+
+    // 21. Table d'audit de sécurité des factures hors-ligne supprimées localement
+    try {
+        $pdo->exec("
+            CREATE TABLE IF NOT EXISTS offline_deleted_logs (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                reference VARCHAR(50),
+                order_type ENUM('SALE', 'PURCHASE') DEFAULT 'SALE',
+                shop_id INT NULL,
+                user_id INT NULL,
+                user_name VARCHAR(100),
+                client_name VARCHAR(150),
+                total_amount DECIMAL(15,2) DEFAULT 0,
+                items_summary TEXT,
+                payment_method VARCHAR(50),
+                reason TEXT,
+                created_locally_at DATETIME,
+                deleted_locally_at DATETIME,
+                synced_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                is_read TINYINT(1) DEFAULT 0,
+                INDEX idx_read (is_read),
+                INDEX idx_shop (shop_id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
         ");
     } catch (Exception $e) {}
 

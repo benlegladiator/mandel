@@ -15,6 +15,16 @@ try {
 
 // --- ACTIONS POST ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // 0. Acquitter les alertes de suppressions hors-ligne (Admin)
+    if (isset($_POST['ack_all_deleted_offline']) && $user_role === 'admin') {
+        try {
+            $pdo->exec("UPDATE offline_deleted_logs SET is_read = 1 WHERE is_read = 0");
+            $success_msg = "Les alertes de suppression hors-ligne ont été acquittées avec succès.";
+        } catch (Exception $e) {
+            $error_msg = "Erreur archivage : " . $e->getMessage();
+        }
+    }
+
     // 1. Enregistrement d'un Petit Achat / Dépense (Vendeur & Admin)
     if (isset($_POST['add_small_expense'])) {
         $amount = floatval($_POST['amount']);
@@ -332,6 +342,17 @@ if ($user_role === 'admin') {
         WHERE ct.shop_id IS NULL AND ct.type = 'IN' AND ct.reference_type = 'TRANSFER' AND ct.status = 'PENDING'
         ORDER BY ct.created_at DESC
     ")->fetchAll();
+
+    try {
+        $deleted_offline_alerts = $pdo->query("
+            SELECT * FROM offline_deleted_logs 
+            WHERE is_read = 0 
+            ORDER BY deleted_locally_at DESC 
+            LIMIT 30
+        ")->fetchAll();
+    } catch (Exception $e_da) {
+        $deleted_offline_alerts = [];
+    }
 }
 
 // Pagination Caisse
@@ -462,6 +483,53 @@ $transactions = $history_stmt->fetchAll();
 <?php if ($error_msg): ?>
     <div class="alert alert-danger border-0 shadow-sm" style="border-radius: 12px;">
         <i class="fa-solid fa-triangle-exclamation me-2"></i><?= $error_msg ?>
+    </div>
+<?php endif; ?>
+
+<!-- Alerte Sécurité : Factures Hors-Ligne Supprimées (Admin uniquement) -->
+<?php if ($user_role === 'admin' && !empty($deleted_offline_alerts)): ?>
+    <div class="alert alert-danger border-0 shadow-sm mb-4 p-4 no-print" style="border-radius: 16px;">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+            <h5 class="fw-bold text-danger mb-0">
+                <i class="fa-solid fa-triangle-exclamation fa-beat me-2"></i>Alerte Sécurité Caisse : Factures Hors-Ligne Supprimées (<?= count($deleted_offline_alerts) ?>)
+            </h5>
+            <form method="POST" action="">
+                <button type="submit" name="ack_all_deleted_offline" class="btn btn-danger btn-sm fw-bold shadow-sm" style="border-radius: 8px;">
+                    <i class="fa-solid fa-check-double me-1"></i>Tout marquer comme vu
+                </button>
+            </form>
+        </div>
+        <p class="small text-danger-emphasis mb-3">
+            ⚠️ <strong>Attention Direction :</strong> Les factures ci-dessous ont été enregistrées en mode autonome hors-ligne, puis <strong>supprimées manuellement sur l'appareil</strong> avant synchronisation. Vérifiez auprès de la caissière si l'argent a bien été remis ou si l'action est légitime.
+        </p>
+        <div class="table-responsive bg-white rounded-3 p-2 border">
+            <table class="table table-sm table-hover mb-0" style="font-size: 0.85rem;">
+                <thead class="table-light">
+                    <tr>
+                        <th>Date Création</th>
+                        <th>Date Suppression</th>
+                        <th>Réf</th>
+                        <th>Caissier(e)</th>
+                        <th>Client / Tiers</th>
+                        <th>Articles</th>
+                        <th class="text-end">Montant</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($deleted_offline_alerts as $da): ?>
+                        <tr>
+                            <td><?= date('d/m/Y H:i', strtotime($da['created_locally_at'])) ?></td>
+                            <td class="text-danger fw-semibold"><?= date('d/m/Y H:i', strtotime($da['deleted_locally_at'])) ?></td>
+                            <td><span class="badge bg-secondary"><?= htmlspecialchars($da['reference']) ?></span></td>
+                            <td class="fw-bold"><?= htmlspecialchars($da['user_name']) ?></td>
+                            <td><?= htmlspecialchars($da['client_name']) ?></td>
+                            <td class="text-truncate" style="max-width: 220px;" title="<?= htmlspecialchars($da['items_summary']) ?>"><?= htmlspecialchars($da['items_summary']) ?></td>
+                            <td class="text-end fw-extrabold text-danger"><?= number_format($da['total_amount'], 0, '.', ' ') ?> FCFA</td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
     </div>
 <?php endif; ?>
 
