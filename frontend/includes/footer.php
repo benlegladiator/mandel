@@ -181,10 +181,10 @@
               <!-- Infos Transaction -->
               <div class="mb-2" style="font-size: 11px;">
                 <div class="d-flex justify-content-between">
-                  <span><strong>Facture N° :</strong> <span id="offInvReference" class="fw-bold">FAC-00001</span></span>
+                  <span><strong id="offInvRefLabel">Facture N° :</strong> <span id="offInvReference" class="fw-bold">FAC-00001</span></span>
                   <span id="offInvDate" class="text-secondary small">14/11/2026 05:00</span>
                 </div>
-                <div><strong>Client :</strong> <span id="offInvClient">Client comptoir</span></div>
+                <div><strong id="offInvContactLabel">Client :</strong> <span id="offInvClient">Client comptoir</span></div>
                 <div><strong>Vendeur :</strong> <span id="offInvUser">Personnel</span></div>
                 <div><strong>Règlement :</strong> <span id="offInvPaymentMethod" class="fw-bold">Espèces</span></div>
               </div>

@@ -266,7 +266,8 @@ async function saveOfflineOrder(orderData) {
     orderData.saved_at = new Date().toISOString();
     if (!orderData.reference) {
       const offlineId = Date.now().toString().slice(-5);
-      orderData.reference = 'FAC-' + offlineId;
+      const prefix = orderData.order_type === 'PURCHASE' ? 'ACH-' : 'FAC-';
+      orderData.reference = prefix + offlineId;
     }
     const req = store.add(orderData);
     return new Promise((resolve) => {
@@ -775,14 +776,18 @@ async function printOfflineInvoice(orderInput) {
     return;
   }
 
-  const ref = ord.reference || ('FAC-' + (ord.id ? String(ord.id).padStart(5, '0') : Date.now().toString().slice(-5)));
+  const isPurchase = (ord.order_type === 'PURCHASE');
+  const defaultPrefix = isPurchase ? 'ACH-' : 'FAC-';
+  const ref = ord.reference || (defaultPrefix + (ord.id ? String(ord.id).padStart(5, '0') : Date.now().toString().slice(-5)));
   const dt = ord.saved_at ? new Date(ord.saved_at).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' }) : new Date().toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' });
 
   const shopNameEl = document.getElementById('offInvShopName');
   const shopContactEl = document.getElementById('offInvShopContact');
   const refEl = document.getElementById('offInvReference');
+  const refLabelEl = document.getElementById('offInvRefLabel');
   const dateEl = document.getElementById('offInvDate');
   const clientEl = document.getElementById('offInvClient');
+  const contactLabelEl = document.getElementById('offInvContactLabel');
   const userEl = document.getElementById('offInvUser');
   const pmEl = document.getElementById('offInvPaymentMethod');
   const itemsBody = document.getElementById('offInvItemsBody');
@@ -800,9 +805,17 @@ async function printOfflineInvoice(orderInput) {
 
   if (shopNameEl) shopNameEl.textContent = ord.shop_name || 'Ets MANDEL';
   if (shopContactEl) shopContactEl.textContent = (ord.shop_address || 'Yaoundé, Cameroun') + (ord.shop_phone ? ' • Tél : ' + ord.shop_phone : '');
+  if (refLabelEl) refLabelEl.textContent = isPurchase ? 'Bon Achat N° :' : 'Facture N° :';
   if (refEl) refEl.textContent = ref;
   if (dateEl) dateEl.textContent = dt;
-  if (clientEl) clientEl.textContent = ord.client_name || (ord.client_id ? 'Client #' + ord.client_id : 'Client comptoir');
+  if (contactLabelEl) contactLabelEl.textContent = isPurchase ? 'Fournisseur :' : 'Client :';
+  if (clientEl) {
+    if (isPurchase) {
+      clientEl.textContent = ord.supplier_name || (ord.supplier_id ? 'Fournisseur #' + ord.supplier_id : 'Fournisseur direct');
+    } else {
+      clientEl.textContent = ord.client_name || (ord.client_id ? 'Client #' + ord.client_id : 'Client comptoir');
+    }
+  }
   if (userEl) userEl.textContent = ord.user_name || 'Personnel';
 
   const pmLabels = { 'CASH': 'Espèces (CASH)', 'MOBILE_MONEY': 'Mobile Money (MOMO)', 'CREDIT': 'À Crédit', 'CARD': 'Carte Bancaire', 'VIREMENT': 'Virement' };

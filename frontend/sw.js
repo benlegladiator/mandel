@@ -1,9 +1,11 @@
-const CACHE_NAME = 'mandel-pwa-v6';
+const CACHE_NAME = 'mandel-pwa-v8';
 
 const ASSETS_TO_CACHE = [
   './index.php',
   './caisse.php',
   './order-create.php',
+  './order-create.php?type=SALE',
+  './order-create.php?type=PURCHASE',
   './orders.php',
   './products.php',
   './product-history.php',
@@ -90,8 +92,12 @@ self.addEventListener('fetch', (event) => {
         // En cas de coupure de réseau (Hors-Ligne)
         console.log('[Service Worker] Réseau indisponible. Recherche dans le cache pour :', event.request.url);
         
-        // 1. Recherche directe dans le cache (avec ou sans paramètres de recherche)
-        const cachedResponse = await caches.match(event.request, { ignoreSearch: true });
+        // 1. Recherche directe dans le cache (d'abord correspondance exacte avec query string)
+        let cachedResponse = await caches.match(event.request);
+        if (!cachedResponse) {
+          // 2. Recherche tolérante sans query string
+          cachedResponse = await caches.match(event.request, { ignoreSearch: true });
+        }
         if (cachedResponse) {
           return cachedResponse;
         }
@@ -100,8 +106,15 @@ self.addEventListener('fetch', (event) => {
         const isHtml = event.request.mode === 'navigate' || 
                        (event.request.headers.get('accept') && event.request.headers.get('accept').includes('text/html'));
         if (isHtml) {
+          // Si navigation vers Achat / Ravitaillement
+          if (event.request.url.includes('type=PURCHASE')) {
+            const purchaseFallback = await caches.match('./order-create.php?type=PURCHASE');
+            if (purchaseFallback) return purchaseFallback;
+          }
+          
           // Servir la page de vente ou l'accueil en cache
-          const orderCreateFallback = await caches.match('./order-create.php', { ignoreSearch: true });
+          const orderCreateFallback = await caches.match('./order-create.php?type=SALE') || 
+                                      await caches.match('./order-create.php', { ignoreSearch: true });
           if (orderCreateFallback) return orderCreateFallback;
 
           const indexFallback = await caches.match('./index.php', { ignoreSearch: true });

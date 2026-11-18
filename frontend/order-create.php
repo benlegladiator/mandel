@@ -24,11 +24,9 @@ if ($_SESSION['user_role'] !== 'admin' && $type === 'PURCHASE') {
 $error = '';
 
 // Charger les contacts correspondants
-if ($type === 'SALE') {
-    $contacts = $pdo->query("SELECT id, name FROM clients ORDER BY name ASC")->fetchAll();
-} else {
-    $contacts = $pdo->query("SELECT id, name FROM suppliers ORDER BY name ASC")->fetchAll();
-}
+$all_clients = $pdo->query("SELECT id, name FROM clients ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
+$all_suppliers = $pdo->query("SELECT id, name FROM suppliers ORDER BY name ASC")->fetchAll(PDO::FETCH_ASSOC);
+$contacts = ($type === 'SALE') ? $all_clients : $all_suppliers;
 
 // Charger les catégories pour la modal de création rapide de produit
 $categories_stmt = $pdo->query("SELECT * FROM categories ORDER BY name ASC");
@@ -371,11 +369,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <!-- Title Banner -->
 <div class="row mb-3">
     <div class="col-12 d-flex justify-content-between align-items-baseline flex-wrap gap-2">
-        <h1 class="fw-extrabold text-slate-800 mb-0 fs-4">
-            <span class="<?= $type === 'SALE' ? 'text-success' : 'text-primary' ?>">
+        <h1 class="fw-extrabold text-slate-800 mb-0 fs-4" id="orderPageHeading">
+            <span id="orderPageIcon" class="<?= $type === 'SALE' ? 'text-success' : 'text-primary' ?>">
                 <i class="fa-solid <?= $type === 'SALE' ? 'fa-cart-shopping' : 'fa-download' ?>"></i>
             </span> 
-            <?= $type === 'SALE' ? 'Enregistrer une Vente (Facture Client)' : 'Enregistrer un Ravitaillement (Achat Fournisseur)' ?>
+            <span id="orderPageText"><?= $type === 'SALE' ? 'Enregistrer une Vente (Facture Client)' : 'Enregistrer un Ravitaillement (Achat Fournisseur)' ?></span>
         </h1>
         <span class="text-secondary small fw-semibold">Boutique active : <span class="badge bg-light text-dark border"><?= htmlspecialchars($current_shop['name']) ?></span></span>
     </div>
@@ -414,7 +412,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <!-- Date & Heure de la Transaction (Pré-remplie par défaut à aujourd'hui) -->
                 <div class="mb-3">
                     <div class="d-flex justify-content-between align-items-center mb-1">
-                        <label for="order_date" class="form-label fw-semibold text-secondary mb-0">Date & Heure de la Vente *</label>
+                        <label for="order_date" id="orderDateLabel" class="form-label fw-semibold text-secondary mb-0">Date & Heure *</label>
                         <button type="button" class="btn btn-outline-primary btn-xs py-0 px-1.5" style="font-size: 0.72rem; border-radius: 4px;" onclick="setCreateOrderDateNow()">
                             <i class="fa-solid fa-clock me-1"></i>Maintenant
                         </button>
@@ -426,11 +424,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <!-- Client/Fournisseur Selector -->
                 <div class="mb-3">
                     <div class="d-flex justify-content-between align-items-center mb-1">
-                        <label for="contact_id" class="form-label fw-semibold text-secondary mb-0">
+                        <label for="contact_id" id="contactLabel" class="form-label fw-semibold text-secondary mb-0">
                             <?= $type === 'SALE' ? 'Client' : 'Fournisseur' ?>
                         </label>
-                        <button type="button" class="btn btn-link btn-sm text-primary p-0 fw-semibold text-decoration-none" onclick="toggleNewContactBlock()">
-                            <i class="fa-solid fa-user-plus me-1"></i>+ Nouveau <?= $type === 'SALE' ? 'Client' : 'Fournisseur' ?>
+                        <button type="button" class="btn btn-link btn-sm text-primary p-0 fw-semibold text-decoration-none" onclick="toggleNewContactBlock()" id="newContactBtn">
+                            <i class="fa-solid fa-user-plus me-1"></i><span id="newContactBtnText">+ Nouveau <?= $type === 'SALE' ? 'Client' : 'Fournisseur' ?></span>
                         </button>
                     </div>
                     <select class="form-select form-control-custom" id="contact_id" name="contact_id" onchange="handleContactSelectChange(this.value)">
@@ -440,7 +438,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <option value="<?= $c['id'] ?>"><?= htmlspecialchars($c['name']) ?></option>
                         <?php endforeach; ?>
                     </select>
-                    <small class="text-muted">Laissez vide pour "<?= $type === 'SALE' ? 'Client comptoir' : 'Fournisseur direct' ?>"</small>
+                    <small class="text-muted" id="contactHelpText">Laissez vide pour "<?= $type === 'SALE' ? 'Client comptoir' : 'Fournisseur direct' ?>"</small>
                 </div>
 
                 <!-- Case à cocher masquée pour déclenchement form -->
@@ -453,16 +451,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 
                 <!-- Option Facture Formelle (TVA) -->
-                <?php if ($type === 'SALE'): ?>
-                <div class="mb-3 p-3 bg-light border rounded-3">
-                    <div class="form-check form-switch mb-0">
-                        <input class="form-check-input" type="checkbox" role="switch" id="is_formal" name="is_formal" value="1">
-                        <label class="form-check-label fw-bold text-slate-800" for="is_formal">Facture Légal / Formelle</label>
-                    </div>
-                    <div id="formal_fields" style="display: none;" class="mt-2 p-2 bg-light border rounded">
-                        <div class="row g-2">
-                            <div class="col-6">
-                                <label class="small text-secondary fw-semibold">Taux TVA (%)</label>
+                <div id="formalInvoiceContainer" class="<?= $type === 'SALE' ? '' : 'd-none' ?>">
+                    <div class="mb-3 p-3 bg-light border rounded-3">
+                        <div class="form-check form-switch mb-0">
+                            <input class="form-check-input" type="checkbox" role="switch" id="is_formal" name="is_formal" value="1">
+                            <label class="form-check-label fw-bold text-slate-800" for="is_formal">Facture Légal / Formelle</label>
+                        </div>
+                        <div id="formal_fields" style="display: none;" class="mt-2 p-2 bg-light border rounded">
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <label class="small text-secondary fw-semibold">Taux TVA (%)</label>
                                 <input type="number" step="0.01" class="form-control form-control-sm" id="tva_rate" name="tva_rate" value="19.25">
                             </div>
                             <div class="col-6">
@@ -475,7 +473,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
                     </div>
                 </div>
-                <?php endif; ?>
+                <!-- Fin Option Facture Formelle -->
 
                 <!-- Formulaire de saisie inline pour nouveau contact -->
                 <div id="new_contact_fields" style="display: none;" class="p-3 bg-light rounded-3 border mb-3">
@@ -604,8 +602,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <a href="orders.php" class="btn btn-outline-secondary px-4 py-2.5 fw-semibold" style="border-radius: 10px;">
                         Annuler
                     </a>
-                    <button type="submit" class="btn <?= $type === 'SALE' ? 'btn-grad' : 'btn-primary' ?> px-5 py-2.5 fw-bold shadow-sm" style="border-radius: 10px; font-size: 1.05rem;">
-                        <i class="fa-solid fa-check-circle me-2"></i><?= $type === 'SALE' ? 'Valider la Vente' : 'Valider le Ravitaillement' ?>
+                    <button type="submit" id="orderSubmitBtn" class="btn <?= $type === 'SALE' ? 'btn-grad' : 'btn-primary' ?> px-5 py-2.5 fw-bold shadow-sm" style="border-radius: 10px; font-size: 1.05rem;">
+                        <i class="fa-solid fa-check-circle me-2"></i><span id="orderSubmitBtnText"><?= $type === 'SALE' ? 'Valider la Vente' : 'Valider le Ravitaillement' ?></span>
                     </button>
                 </div>
 
@@ -702,7 +700,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <!-- Data structure for products lookup in JS -->
 <script>
 const productsCatalog = <?= json_encode($products) ?>;
-const transactionType = '<?= $type ?>';
+const allClientsCatalog = <?= json_encode($all_clients) ?>;
+const allSuppliersCatalog = <?= json_encode($all_suppliers) ?>;
+
+// Détection intelligente du type : même si la page a été chargée depuis le cache PWA (template Vente),
+// si l'utilisateur a cliqué sur "Achat" (?type=PURCHASE), on commute dynamiquement tout en mode Achat / Ravitaillement
+const urlParams = new URLSearchParams(window.location.search);
+let currentType = '<?= $type ?>';
+if (urlParams.has('type')) {
+    const pType = urlParams.get('type').toUpperCase();
+    if (pType === 'PURCHASE' || pType === 'SALE') {
+        currentType = pType;
+    }
+}
+let transactionType = currentType;
 </script>
 
 <script>
@@ -714,18 +725,80 @@ document.addEventListener('DOMContentLoaded', function() {
     const optionsTemplate = document.getElementById('productSelectOptionsTemplate');
     const orderForm = document.getElementById('orderForm');
 
+    function syncTransactionTypeUI() {
+        const isPurchase = (transactionType === 'PURCHASE');
+        
+        // Titre et icône
+        const titleIcon = document.getElementById('orderPageIcon');
+        const titleText = document.getElementById('orderPageText');
+        if (titleIcon) {
+            titleIcon.className = isPurchase ? 'text-primary' : 'text-success';
+            titleIcon.innerHTML = `<i class="fa-solid ${isPurchase ? 'fa-download' : 'fa-cart-shopping'}"></i>`;
+        }
+        if (titleText) {
+            titleText.textContent = isPurchase ? 'Enregistrer un Ravitaillement (Achat Fournisseur)' : 'Enregistrer une Vente (Facture Client)';
+        }
+
+        // Contact (Client vs Fournisseur)
+        const contactLabel = document.getElementById('contactLabel');
+        const newContactBtnText = document.getElementById('newContactBtnText');
+        const contactHelpText = document.getElementById('contactHelpText');
+        const contactSelect = document.getElementById('contact_id');
+
+        if (contactLabel) contactLabel.textContent = isPurchase ? 'Fournisseur' : 'Client';
+        if (newContactBtnText) newContactBtnText.textContent = isPurchase ? '+ Nouveau Fournisseur' : '+ Nouveau Client';
+        if (contactHelpText) contactHelpText.textContent = isPurchase ? 'Laissez vide pour "Fournisseur direct"' : 'Laissez vide pour "Client comptoir"';
+
+        if (contactSelect && (typeof allSuppliersCatalog !== 'undefined' || typeof allClientsCatalog !== 'undefined')) {
+            const currentVal = contactSelect.value;
+            const catalog = isPurchase ? allSuppliersCatalog : allClientsCatalog;
+            const defaultLabel = isPurchase ? '-- Sélectionner un Fournisseur --' : '-- Sélectionner un Client --';
+            const newLabel = isPurchase ? '+ Créer un nouveau fournisseur...' : '+ Créer un nouveau client...';
+            
+            let opts = `<option value="">${defaultLabel}</option>`;
+            opts += `<option value="NEW" class="fw-bold text-primary">${newLabel}</option>`;
+            if (Array.isArray(catalog)) {
+                catalog.forEach(c => {
+                    opts += `<option value="${c.id}">${c.name}</option>`;
+                });
+            }
+            contactSelect.innerHTML = opts;
+            if (currentVal && currentVal !== 'NEW') {
+                contactSelect.value = currentVal;
+            }
+        }
+
+        // Masquer le switch TVA Formelle pour les achats
+        const formalContainer = document.getElementById('formalInvoiceContainer');
+        if (formalContainer) {
+            if (isPurchase) {
+                formalContainer.classList.add('d-none');
+            } else {
+                formalContainer.classList.remove('d-none');
+            }
+        }
+
+        if (orderForm) {
+            orderForm.action = `order-create.php?type=${transactionType}`;
+        }
+    }
+
+    // Appliquer la configuration dynamique dès le chargement
+    syncTransactionTypeUI();
+
     function updateOrderCreateOfflineUI() {
         const isOffline = (!navigator.onLine || (typeof isForcedOffline === 'function' && isForcedOffline()));
-        const submitBtn = orderForm ? orderForm.querySelector('button[type="submit"]') : null;
+        const submitBtn = document.getElementById('orderSubmitBtn') || (orderForm ? orderForm.querySelector('button[type="submit"]') : null);
+        const isPurchase = (transactionType === 'PURCHASE');
         if (submitBtn) {
             if (isOffline) {
-                submitBtn.classList.remove('btn-success');
+                submitBtn.classList.remove('btn-success', 'btn-primary', 'btn-grad');
                 submitBtn.classList.add('btn-warning', 'text-dark');
-                submitBtn.innerHTML = '<i class="fa-solid fa-hard-drive me-2"></i>Valider (Enregistrement Hors-Ligne)';
+                submitBtn.innerHTML = `<i class="fa-solid fa-hard-drive me-2"></i>Valider ${isPurchase ? 'Ravitaillement' : 'Vente'} (Enregistrement Hors-Ligne)`;
             } else {
                 submitBtn.classList.remove('btn-warning', 'text-dark');
-                submitBtn.classList.add('btn-success');
-                submitBtn.innerHTML = '<i class="fa-solid fa-check-circle me-2"></i><?= $type === 'SALE' ? 'Valider la Vente' : 'Valider le Ravitaillement' ?>';
+                submitBtn.classList.add(isPurchase ? 'btn-primary' : 'btn-grad');
+                submitBtn.innerHTML = `<i class="fa-solid fa-check-circle me-2"></i>${isPurchase ? 'Valider le Ravitaillement' : 'Valider la Vente'}`;
             }
         }
     }
@@ -777,8 +850,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
 
-                const clientSelect = document.getElementById('client_id');
-                const supplierSelect = document.getElementById('supplier_id');
+                const isPurchase = (transactionType === 'PURCHASE');
+                const contactSelect = document.getElementById('contact_id');
                 const shopSelect = document.getElementById('shop_id');
                 const pmSelect = document.getElementById('payment_method');
                 const discountInput = document.getElementById('discount');
@@ -786,8 +859,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 const amountPaidInput = document.getElementById('amount_paid');
                 const dueDateInput = document.getElementById('due_date');
 
-                const clientOpt = clientSelect && clientSelect.selectedOptions ? clientSelect.selectedOptions[0] : null;
-                const clientName = clientOpt && clientOpt.value ? clientOpt.textContent.trim() : 'Client comptoir';
+                const contactOpt = contactSelect && contactSelect.selectedOptions ? contactSelect.selectedOptions[0] : null;
+                const contactName = contactOpt && contactOpt.value ? contactOpt.textContent.trim() : (isPurchase ? 'Fournisseur direct' : 'Client comptoir');
                 const shopOpt = shopSelect && shopSelect.selectedOptions ? shopSelect.selectedOptions[0] : null;
                 const shopName = shopOpt ? shopOpt.textContent.trim() : '<?= addslashes($current_shop["name"] ?? "Boutique Mandel") ?>';
                 const shopAddress = '<?= addslashes($current_shop["address"] ?? "Yaoundé, Cameroun") ?>';
@@ -801,10 +874,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     shop_phone: shopPhone,
                     user_id: <?= intval($_SESSION['user_id'] ?? 1) ?>,
                     user_name: userName,
-                    order_type: '<?= $type ?>',
-                    client_id: parseInt(clientSelect ? clientSelect.value : 0) || null,
-                    client_name: clientName,
-                    supplier_id: parseInt(supplierSelect ? supplierSelect.value : 0) || null,
+                    order_type: transactionType,
+                    client_id: !isPurchase ? (parseInt(contactSelect ? contactSelect.value : 0) || null) : null,
+                    client_name: !isPurchase ? contactName : null,
+                    supplier_id: isPurchase ? (parseInt(contactSelect ? contactSelect.value : 0) || null) : null,
+                    supplier_name: isPurchase ? contactName : null,
                     payment_method: pmSelect ? pmSelect.value : 'CASH',
                     amount_paid: parseFloat(amountPaidInput ? amountPaidInput.value : 0) || 0,
                     due_date: (dueDateInput ? dueDateInput.value : null),
@@ -822,7 +896,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const savedOrder = await saveOfflineOrder(orderData);
                 if (savedOrder) {
                     if (typeof showPwaToast === 'function') {
-                        showPwaToast('🎉 Vente enregistrée avec succès en local (Mode Hors-Ligne) !', 'success');
+                        showPwaToast(isPurchase ? '🎉 Ravitaillement (Achat) enregistré avec succès en local (Mode Hors-Ligne) !' : '🎉 Vente enregistrée avec succès en local (Mode Hors-Ligne) !', 'success');
                     }
                     if (typeof updateOfflineBanner === 'function') {
                         updateOfflineBanner();
@@ -838,6 +912,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         tableBody.innerHTML = '';
                         addNewRow();
                     }
+                    syncTransactionTypeUI();
                     recalculateGrandTotal();
 
                     // Ouvrir immédiatement la facture pour impression

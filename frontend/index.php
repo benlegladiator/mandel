@@ -343,7 +343,15 @@ if (isset($_SESSION['error_message'])) {
             </div>
         </a>
 
-        <!-- Ligne 4 : Dépenses / Finance & Crédits -->
+        <!-- Ligne 4 : Achat & Finances / Crédits -->
+        <a href="order-create.php?type=PURCHASE" class="mandel-action-card-2" style="border-left: 4px solid #14b8a6;">
+            <div class="mac-icon" style="background: #f0fdfa; color: #0d9488;">📥</div>
+            <div class="mac-text">
+                <div class="mac-title" style="color: #115e59;">Achat</div>
+                <div class="mac-sub">Ravitaillement stock</div>
+            </div>
+        </a>
+
         <?php if ($user_role === 'admin'): ?>
             <a href="finance.php" class="mandel-action-card-2" style="border-left: 4px solid #ef4444;">
                 <div class="mac-icon" style="background: #fef2f2; color: #dc2626;">💸</div>
@@ -352,23 +360,32 @@ if (isset($_SESSION['error_message'])) {
                     <div class="mac-sub">Dépenses & bilan</div>
                 </div>
             </a>
-        <?php else: ?>
-            <a href="order-create.php?type=PURCHASE" class="mandel-action-card-2" style="border-left: 4px solid #14b8a6;">
-                <div class="mac-icon" style="background: #f0fdfa; color: #0d9488;">📥</div>
+
+            <!-- Ligne 5 pour Admin : Crédits & Sorties -->
+            <a href="credits.php" class="mandel-action-card-2" style="border-left: 4px solid #f97316;">
+                <div class="mac-icon" style="background: #fff7ed; color: #ea580c;">🤝</div>
                 <div class="mac-text">
-                    <div class="mac-title" style="color: #115e59;">Achat</div>
-                    <div class="mac-sub">Réception stock</div>
+                    <div class="mac-title" style="color: #9a3412;">Crédits</div>
+                    <div class="mac-sub">Créances clients</div>
+                </div>
+            </a>
+
+            <a href="stock-exit.php" class="mandel-action-card-2" style="border-left: 4px solid #ec4899;">
+                <div class="mac-icon" style="background: #fdf2f8; color: #db2777;">📤</div>
+                <div class="mac-text">
+                    <div class="mac-title" style="color: #9d174d;">Mvt Sortie</div>
+                    <div class="mac-sub">Pertes & retraits</div>
+                </div>
+            </a>
+        <?php else: ?>
+            <a href="credits.php" class="mandel-action-card-2" style="border-left: 4px solid #f97316;">
+                <div class="mac-icon" style="background: #fff7ed; color: #ea580c;">🤝</div>
+                <div class="mac-text">
+                    <div class="mac-title" style="color: #9a3412;">Crédits</div>
+                    <div class="mac-sub">Créances clients</div>
                 </div>
             </a>
         <?php endif; ?>
-
-        <a href="credits.php" class="mandel-action-card-2" style="border-left: 4px solid #f97316;">
-            <div class="mac-icon" style="background: #fff7ed; color: #ea580c;">🤝</div>
-            <div class="mac-text">
-                <div class="mac-title" style="color: #9a3412;">Crédits</div>
-                <div class="mac-sub">Créances clients</div>
-            </div>
-        </a>
     </div>
 </div>
 
