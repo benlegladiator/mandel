@@ -434,9 +434,30 @@ $filter_qs = http_build_query($export_params);
             <a href="print-orders.php?<?= $filter_qs ?>" target="_blank" class="btn btn-outline-secondary btn-sm fw-semibold" style="border-radius: 8px;" title="Imprimer tout le journal complet selon les filtres (toutes les transactions)">
                 <i class="fa-solid fa-print me-1"></i>Imprimer Tout
             </a>
-            <a href="export-orders-excel.php?<?= $filter_qs ?>" class="btn btn-outline-success btn-sm fw-bold shadow-sm" style="border-radius: 8px;" title="Exporter toutes les transactions filtrées au format Excel (.xlsx)">
-                <i class="fa-solid fa-file-excel me-1"></i>Exporter Excel (.xlsx)
-            </a>
+            <div class="btn-group shadow-sm">
+                <a href="export-orders-excel.php?mode=items&<?= $filter_qs ?>" class="btn btn-outline-success btn-sm fw-bold" style="border-radius: 8px 0 0 8px;" title="Exporter les transactions détaillées ligne par ligne d'article (format idéal pour calculs et filtres Excel)">
+                    <i class="fa-solid fa-file-excel me-1"></i>Excel Détaillé
+                </a>
+                <button type="button" class="btn btn-outline-success btn-sm dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false" style="border-radius: 0 8px 8px 0;" title="Autres options d'export Excel">
+                    <span class="visually-hidden">Options d'export</span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="font-size: 0.85rem; border-radius: 10px;">
+                    <li><h6 class="dropdown-header text-uppercase fw-bold text-muted small py-1">Format d'exportation</h6></li>
+                    <li>
+                        <a class="dropdown-item py-2 fw-semibold" href="export-orders-excel.php?mode=items&<?= $filter_qs ?>">
+                            <i class="fa-solid fa-table-list text-success me-2"></i>Détaillé par article (Recommandé)
+                            <div class="text-muted small ps-4 fw-normal">1 ligne par article vendu, sans colonne étirée</div>
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider my-1"></li>
+                    <li>
+                        <a class="dropdown-item py-2" href="export-orders-excel.php?mode=summary&<?= $filter_qs ?>">
+                            <i class="fa-solid fa-file-invoice text-primary me-2"></i>Synthétique par facture
+                            <div class="text-muted small ps-4">1 ligne par facture avec résumé des articles</div>
+                        </a>
+                    </li>
+                </ul>
+            </div>
             <a href="order-create.php?type=SALE" class="btn btn-grad btn-sm">
                 <i class="fa-solid fa-cart-shopping me-1"></i>Vente
             </a>
@@ -732,9 +753,28 @@ $flow_rate = ($report_purchases_total > 0) ? min(100, round(($report_sales_total
                     </span>
                 </div>
                 <div class="d-flex align-items-center gap-2 flex-wrap no-print">
-                    <a href="export-orders-excel.php?<?= $filter_qs ?>" class="btn btn-outline-success btn-sm fw-bold shadow-sm" title="Télécharger tout le journal filtré en Excel (.xlsx)">
-                        <i class="fa-solid fa-file-excel me-1"></i>Excel (.xlsx)
-                    </a>
+                    <div class="btn-group shadow-sm">
+                        <a href="export-orders-excel.php?mode=items&<?= $filter_qs ?>" class="btn btn-outline-success btn-sm fw-bold" style="border-radius: 8px 0 0 8px;" title="Télécharger le détail par article en Excel (.xlsx)">
+                            <i class="fa-solid fa-file-excel me-1"></i>Excel Détaillé
+                        </a>
+                        <button type="button" class="btn btn-outline-success btn-sm dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false" style="border-radius: 0 8px 8px 0;" title="Options d'export Excel">
+                            <span class="visually-hidden">Options</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="font-size: 0.85rem; border-radius: 10px;">
+                            <li><h6 class="dropdown-header text-uppercase fw-bold text-muted small py-1">Format d'export</h6></li>
+                            <li>
+                                <a class="dropdown-item py-2 fw-semibold" href="export-orders-excel.php?mode=items&<?= $filter_qs ?>">
+                                    <i class="fa-solid fa-table-list text-success me-2"></i>Détaillé (1 ligne par article)
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider my-1"></li>
+                            <li>
+                                <a class="dropdown-item py-2" href="export-orders-excel.php?mode=summary&<?= $filter_qs ?>">
+                                    <i class="fa-solid fa-file-invoice text-primary me-2"></i>Synthétique (1 ligne par facture)
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
                     <a href="print-orders.php?<?= $filter_qs ?>" target="_blank" class="btn btn-outline-secondary btn-sm fw-semibold shadow-sm" title="Imprimer tout le journal filtré (toutes les transactions)">
                         <i class="fa-solid fa-print me-1"></i>Imprimer Tout
                     </a>

@@ -473,6 +473,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
                     </div>
                 </div>
+                </div>
                 <!-- Fin Option Facture Formelle -->
 
                 <!-- Formulaire de saisie inline pour nouveau contact -->

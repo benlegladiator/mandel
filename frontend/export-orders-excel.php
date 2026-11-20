@@ -129,23 +129,50 @@ if (!empty($orders)) {
     }
 }
 
+// Mode d'export : 'items' (détaillé par ligne d'article, sans colonne étirée) ou 'summary' (1 ligne par facture)
+$export_mode = isset($_GET['mode']) && $_GET['mode'] === 'summary' ? 'summary' : 'items';
+
 // En-têtes Excel
-$headers = [
-    'Date',
-    'Heure',
-    'N° Facture',
-    'Dépôt / Magasin',
-    'Type Mouvement',
-    'Statut',
-    'Opérateur',
-    'Tiers (Client / Fournisseur)',
-    'Mode Règlement',
-    'Articles & Quantités',
-    'Total Facture (FCFA)',
-    'Montant Encaissé (FCFA)',
-    'Reste à Payer (FCFA)',
-    'Remarques / Motif'
-];
+if ($export_mode === 'items') {
+    $headers = [
+        'Date',
+        'Heure',
+        'N° Facture',
+        'Dépôt / Magasin',
+        'Type Mouvement',
+        'Statut',
+        'Opérateur',
+        'Tiers (Client / Fournisseur)',
+        'Désignation Article',
+        'Unité',
+        'Quantité',
+        'Prix Unitaire (FCFA)',
+        'Total Ligne (FCFA)',
+        'Mode Règlement',
+        'Total Facture (FCFA)',
+        'Montant Encaissé (FCFA)',
+        'Reste à Payer (FCFA)',
+        'Remarques / Motif'
+    ];
+} else {
+    $headers = [
+        'Date',
+        'Heure',
+        'N° Facture',
+        'Dépôt / Magasin',
+        'Type Mouvement',
+        'Statut',
+        'Opérateur',
+        'Tiers (Client / Fournisseur)',
+        'Nombre Articles',
+        'Articles & Quantités',
+        'Mode Règlement',
+        'Total Facture (FCFA)',
+        'Montant Encaissé (FCFA)',
+        'Reste à Payer (FCFA)',
+        'Remarques / Motif'
+    ];
+}
 
 $rows = [];
 $sum_total = 0;
@@ -193,15 +220,6 @@ foreach ($orders as $ord) {
     ];
     $pm_str = $pm_labels[$ord['payment_method']] ?? $ord['payment_method'];
 
-    // Articles résumé
-    $articles_parts = [];
-    if (!empty($order_items_map[$ord['id']])) {
-        foreach ($order_items_map[$ord['id']] as $it) {
-            $articles_parts[] = $it['product_name'] . ' (x' . $it['quantity'] . ' @ ' . number_format($it['unit_price'], 0, '.', ' ') . ' F)';
-        }
-    }
-    $articles_str = !empty($articles_parts) ? implode('; ', $articles_parts) : '-';
-
     // Montants
     $total_amt = floatval($ord['total_amount'] ?? 0);
     $paid_amt = 0;
@@ -223,45 +241,135 @@ foreach ($orders as $ord) {
         $notes = ($notes ? $notes . ' | ' : '') . 'Hors-Marge: ' . $ord['discount_reason'];
     }
 
-    $rows[] = [
-        $date_str,
-        $time_str,
-        $ref,
-        $ord['shop_name'] ?? '',
-        $type_str,
-        $status_str,
-        $ord['user_name'] ?? 'Inconnu',
-        $contact,
-        $pm_str,
-        $articles_str,
-        $total_amt,
-        $paid_amt,
-        $due_amt,
-        $notes
-    ];
+    if ($export_mode === 'items') {
+        // Mode Détaillé : 1 ligne par article, données parfaites pour analyses et filtres Excel
+        if (!empty($order_items_map[$ord['id']])) {
+            foreach ($order_items_map[$ord['id']] as $it) {
+                $qty = intval($it['quantity'] ?? 0);
+                $u_price = floatval($it['unit_price'] ?? 0);
+                $l_tot = floatval($it['total_price'] ?? ($qty * $u_price));
+
+                $rows[] = [
+                    $date_str,
+                    $time_str,
+                    $ref,
+                    $ord['shop_name'] ?? '',
+                    $type_str,
+                    $status_str,
+                    $ord['user_name'] ?? 'Inconnu',
+                    $contact,
+                    $it['product_name'] ?? 'Article',
+                    $it['unit'] ?: 'UNITE',
+                    $qty,
+                    $u_price,
+                    $l_tot,
+                    $pm_str,
+                    $total_amt,
+                    $paid_amt,
+                    $due_amt,
+                    $notes
+                ];
+            }
+        } else {
+            $rows[] = [
+                $date_str,
+                $time_str,
+                $ref,
+                $ord['shop_name'] ?? '',
+                $type_str,
+                $status_str,
+                $ord['user_name'] ?? 'Inconnu',
+                $contact,
+                '-',
+                '-',
+                0,
+                0,
+                0,
+                $pm_str,
+                $total_amt,
+                $paid_amt,
+                $due_amt,
+                $notes
+            ];
+        }
+    } else {
+        // Mode Synthétique : 1 ligne par facture avec articles abrégés
+        $articles_parts = [];
+        $items_count = 0;
+        if (!empty($order_items_map[$ord['id']])) {
+            $items_count = count($order_items_map[$ord['id']]);
+            foreach ($order_items_map[$ord['id']] as $it) {
+                $articles_parts[] = $it['quantity'] . 'x ' . $it['product_name'];
+            }
+        }
+        $articles_str = !empty($articles_parts) ? implode(' | ', $articles_parts) : '-';
+
+        $rows[] = [
+            $date_str,
+            $time_str,
+            $ref,
+            $ord['shop_name'] ?? '',
+            $type_str,
+            $status_str,
+            $ord['user_name'] ?? 'Inconnu',
+            $contact,
+            $items_count,
+            $articles_str,
+            $pm_str,
+            $total_amt,
+            $paid_amt,
+            $due_amt,
+            $notes
+        ];
+    }
 }
 
 // Ligne de totalisation en fin de tableau
 if (!empty($rows)) {
-    $rows[] = [
-        'TOTAL GÉNÉRAL',
-        '',
-        count($orders) . ' factures',
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
-        '',
-        $sum_total,
-        $sum_encaisse,
-        $sum_reste,
-        'Totaux des factures validées'
-    ];
+    if ($export_mode === 'items') {
+        $rows[] = [
+            'TOTAL GÉNÉRAL',
+            '',
+            count($orders) . ' factures',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            $sum_total,
+            $sum_encaisse,
+            $sum_reste,
+            'Totaux des factures validées'
+        ];
+    } else {
+        $rows[] = [
+            'TOTAL GÉNÉRAL',
+            '',
+            count($orders) . ' factures',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            $sum_total,
+            $sum_encaisse,
+            $sum_reste,
+            'Totaux des factures validées'
+        ];
+    }
 }
 
 $safe_shop = preg_replace('/[^a-zA-Z0-9_\-]+/', '_', $shop_name);
-$filename = 'Journal_Flux_' . $safe_shop . '_' . date('Ymd_His') . '.xlsx';
+$mode_suffix = ($export_mode === 'items') ? 'Detail_Articles' : 'Synthese_Factures';
+$filename = 'Journal_Flux_' . $mode_suffix . '_' . $safe_shop . '_' . date('Ymd_His') . '.xlsx';
 
 MandelExcelExporter::export($filename, 'Journal Flux', $headers, $rows);
