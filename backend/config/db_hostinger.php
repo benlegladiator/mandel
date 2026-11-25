@@ -7,6 +7,6 @@
  */
 
 if (!defined('HOSTINGER_DB_HOST')) define('HOSTINGER_DB_HOST', 'localhost');
-if (!defined('HOSTINGER_DB_NAME')) define('HOSTINGER_DB_NAME', 'mandel_db');
-if (!defined('HOSTINGER_DB_USER')) define('HOSTINGER_DB_USER', 'root');
-if (!defined('HOSTINGER_DB_PASS')) define('HOSTINGER_DB_PASS', '');
+if (!defined('HOSTINGER_DB_NAME')) define('HOSTINGER_DB_NAME', 'u458668916_mandel');
+if (!defined('HOSTINGER_DB_USER')) define('HOSTINGER_DB_USER', 'u458668916_mandel');
+if (!defined('HOSTINGER_DB_PASS')) define('HOSTINGER_DB_PASS', 'Mandel@2026');
