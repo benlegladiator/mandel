@@ -6,21 +6,38 @@ define('PWA_DISABLED_MESSAGE', 'Service PWA & Mode Hors-Ligne non disponible pou
 // Définir le fuseau horaire du Cameroun (UTC+1)
 date_default_timezone_set('Africa/Douala');
 
-// Détection automatique de l'environnement (Hébergement en ligne InfinityFree vs Local XAMPP)
-$is_online = (
-    (isset($_SERVER['HTTP_HOST']) && (strpos($_SERVER['HTTP_HOST'], 'free.nf') !== false || strpos($_SERVER['HTTP_HOST'], 'infinityfree') !== false))
-    || (isset($_SERVER['SERVER_NAME']) && strpos($_SERVER['SERVER_NAME'], 'free.nf') !== false)
-    || (!file_exists('C:/xampp') && !file_exists('C:\\xampp') && PHP_OS_FAMILY !== 'Windows')
+// Inclusion de la configuration Hostinger si présente
+if (file_exists(__DIR__ . '/db_hostinger.php')) {
+    require_once __DIR__ . '/db_hostinger.php';
+}
+
+// Détection de l'environnement (Hostinger / etsmandel.com vs InfinityFree vs Local XAMPP)
+$http_host = $_SERVER['HTTP_HOST'] ?? $_SERVER['SERVER_NAME'] ?? '';
+$is_hostinger = (
+    strpos($http_host, 'etsmandel.com') !== false
+    || strpos($http_host, 'hostingersite.com') !== false
+    || (PHP_OS_FAMILY !== 'Windows' && !file_exists('C:/xampp') && !file_exists('C:\\xampp') && strpos($http_host, 'free.nf') === false)
 );
 
-if ($is_online) {
-    // Configuration pour l'hébergement en ligne (InfinityFree)
+$is_infinityfree = (
+    strpos($http_host, 'free.nf') !== false
+    || strpos($http_host, 'infinityfree') !== false
+);
+
+if ($is_hostinger) {
+    // Configuration Hostinger (etsmandel.com)
+    define('DB_HOST', defined('HOSTINGER_DB_HOST') ? HOSTINGER_DB_HOST : 'localhost');
+    define('DB_USER', defined('HOSTINGER_DB_USER') ? HOSTINGER_DB_USER : 'root');
+    define('DB_PASS', defined('HOSTINGER_DB_PASS') ? HOSTINGER_DB_PASS : '');
+    define('DB_NAME', defined('HOSTINGER_DB_NAME') ? HOSTINGER_DB_NAME : 'mandel_db');
+} elseif ($is_infinityfree) {
+    // Ancien environnement de test InfinityFree
     define('DB_HOST', 'sql113.infinityfree.com');
     define('DB_USER', 'if0_39882531');
     define('DB_PASS', 'cmTJtR2Z2yq8MO');
     define('DB_NAME', 'if0_39882531_mandel');
 } else {
-    // Configuration locale (XAMPP) - 127.0.0.1 force TCP et évite l'erreur de socket [2002]
+    // Configuration locale (XAMPP)
     define('DB_HOST', '127.0.0.1');
     define('DB_USER', 'root');
     define('DB_PASS', '');
@@ -37,9 +54,9 @@ try {
         PDO::ATTR_TIMEOUT => 4,
     ]);
 } catch (PDOException $e) {
-    // Fallback automatique si la détection d'hôte a été inversée
+    // Fallback automatique si la détection d'hôte a été inversée ou port local
     try {
-        if ($is_online) {
+        if ($is_hostinger || $is_infinityfree) {
             $pdo = new PDO("mysql:host=127.0.0.1;dbname=mandel_db;charset=utf8mb4", "root", "", [
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
@@ -47,7 +64,8 @@ try {
                 PDO::ATTR_TIMEOUT => 4,
             ]);
         } else {
-            $pdo = new PDO("mysql:host=sql113.infinityfree.com;dbname=if0_39882531_mandel;charset=utf8mb4", "if0_39882531", "cmTJtR2Z2yq8MO", [
+            // Tentative sur localhost socket
+            $pdo = new PDO("mysql:host=localhost;dbname=mandel_db;charset=utf8mb4", "root", "", [
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                 PDO::ATTR_EMULATE_PREPARES => false,
@@ -55,7 +73,7 @@ try {
             ]);
         }
     } catch (PDOException $e2) {
-        die("Erreur de connexion à la base de données : " . $e->getMessage());
+        die("<h3>Erreur de connexion à la base de données Mandel</h3><p>" . htmlspecialchars($e->getMessage()) . "</p><p>Sur Hostinger, veuillez vérifier vos identifiants dans <code>backend/config/db_hostinger.php</code>.</p>");
     }
 }
 

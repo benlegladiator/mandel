@@ -1,0 +1,25 @@
+# Mandel ERP - Configuration Apache / Hostinger
+Options -Indexes
+DirectoryIndex index.php frontend/index.php
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Redirection automatique vers HTTPS si non sécurisé
+    RewriteCond %{HTTPS} off
+    RewriteCond %{HTTP_HOST} ^(www\.)?etsmandel\.com [NC]
+    RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+    # Protection des fichiers sensibles et bases SQL
+    RewriteRule ^(\.git|\.github|.*\.sql|.*\.log|composer\.(json|lock)) - [F,L]
+</IfModule>
+
+# Bloquer l'accès direct aux fichiers de configuration et bases
+<FilesMatch "(\.sql|\.log|\.env|\.git)$">
+    Require all denied
+</FilesMatch>
+
+# Types MIME PWA
+<IfModule mod_mime.c>
+    AddType application/manifest+json .webmanifest .json
+</IfModule>
