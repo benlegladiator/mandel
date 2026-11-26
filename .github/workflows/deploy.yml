@@ -13,16 +13,21 @@ jobs:
       - name: 🚚 Recuperation du code
         uses: actions/checkout@v4
 
+      - name: 🧹 Nettoyage Hote FTP
+        id: clean_ftp
+        run: |
+          RAW_HOST="${{ secrets.FTP_SERVER }}"
+          CLEAN_HOST=$(echo "$RAW_HOST" | sed -e 's|^[a-zA-Z]*://||' -e 's|/$||' | tr -d ' ')
+          echo "host=$CLEAN_HOST" >> $GITHUB_OUTPUT
+
       - name: 🚀 Synchronisation FTP vers Hostinger
-        if: "${{ env.HAS_FTP != '' }}"
-        env:
-          HAS_FTP: ${{ secrets.FTP_SERVER }}
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
-          server: ${{ secrets.FTP_SERVER }}
+          server: ${{ steps.clean_ftp.outputs.host }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           server-dir: public_html/
+          port: 21
           exclude: |
             **/.git*
             **/.git*/**
