@@ -1,4 +1,5 @@
 <?php
+// Mandel ERP Production - Hostinger Deployment Sync
 require_once __DIR__ . '/includes/header.php';
 
 $active_shop_id = $_SESSION['active_shop_id'];
