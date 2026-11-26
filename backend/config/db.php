@@ -25,11 +25,11 @@ $is_infinityfree = (
 );
 
 if ($is_hostinger) {
-    // Configuration Hostinger (etsmandel.com)
+    // Configuration Hostinger (etsmandel.com & daily-lightcoral-gull-41.hostingersite.com)
     define('DB_HOST', defined('HOSTINGER_DB_HOST') ? HOSTINGER_DB_HOST : 'localhost');
-    define('DB_USER', defined('HOSTINGER_DB_USER') ? HOSTINGER_DB_USER : 'root');
-    define('DB_PASS', defined('HOSTINGER_DB_PASS') ? HOSTINGER_DB_PASS : '');
-    define('DB_NAME', defined('HOSTINGER_DB_NAME') ? HOSTINGER_DB_NAME : 'mandel_db');
+    define('DB_USER', (defined('HOSTINGER_DB_USER') && HOSTINGER_DB_USER !== 'root') ? HOSTINGER_DB_USER : 'u458668916_mandel');
+    define('DB_PASS', (defined('HOSTINGER_DB_PASS') && HOSTINGER_DB_PASS !== '') ? HOSTINGER_DB_PASS : 'Mandel@2026');
+    define('DB_NAME', (defined('HOSTINGER_DB_NAME') && HOSTINGER_DB_NAME !== 'mandel_db') ? HOSTINGER_DB_NAME : 'u458668916_mandel');
 } elseif ($is_infinityfree) {
     // Ancien environnement de test InfinityFree
     define('DB_HOST', 'sql113.infinityfree.com');
