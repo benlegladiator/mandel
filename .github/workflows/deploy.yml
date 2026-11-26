@@ -1,4 +1,4 @@
-name: Deploiement Automatique vers InfinityFree Mandel
+name: Deploiement vers Hostinger Mandel (etsmandel.com)
 
 on:
   push:
@@ -7,19 +7,22 @@ on:
 
 jobs:
   deploy:
-    name: Sync FTP to InfinityFree
+    name: Deploiement Hostinger
     runs-on: ubuntu-latest
     steps:
       - name: 🚚 Recuperation du code
         uses: actions/checkout@v4
 
-      - name: 🚀 Synchronisation FTP vers InfinityFree
+      - name: 🚀 Synchronisation FTP vers Hostinger
+        if: "${{ env.HAS_FTP != '' }}"
+        env:
+          HAS_FTP: ${{ secrets.FTP_SERVER }}
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          server-dir: mandel.free.nf/htdocs/
+          server-dir: public_html/
           exclude: |
             **/.git*
             **/.git*/**
